@@ -20,6 +20,7 @@ model User {
   password           String
   created_at         DateTime             @default(now())
   updated_at         DateTime?
+  deleted_at         DateTime?
   is_active          Boolean              @default(true)
   transaction        Transaction[]
   bill               Bill[]
