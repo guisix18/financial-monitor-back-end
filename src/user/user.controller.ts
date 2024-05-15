@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Delete,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto, UserItem } from './dto/user.dto';
 import { RecordWithId } from 'src/common/record-with-id.dto';
@@ -26,5 +34,10 @@ export class UserController {
     @Param() filters: FindOneParams,
   ): Promise<RecordWithId> {
     return await this.userService.updateUser(dto, filters.id);
+  }
+
+  @Delete('/:id')
+  async deleteUser(@Param() filters: FindOneParams): Promise<void> {
+    return await this.userService.deleteUser(filters.id);
   }
 }
