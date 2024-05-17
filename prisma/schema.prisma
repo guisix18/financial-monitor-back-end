@@ -18,9 +18,9 @@ model User {
   name               String
   email              String
   password           String
-  created_at         DateTime             @default(now())
-  updated_at         DateTime?
-  deleted_at         DateTime?
+  created_at         DateTime             @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?            @db.Timestamp(6)
+  deleted_at         DateTime?            @db.Timestamp(6)
   is_active          Boolean              @default(true)
   transaction        Transaction[]
   bill               Bill[]
@@ -35,6 +35,9 @@ model Transaction {
   value              Int
   category           String
   made_in            DateTime
+  created_at         DateTime             @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?            @db.Timestamp(6)
+  deleted_at         DateTime?            @db.Timestamp(6)
   type               transaction_type
   transactionHistory TransactionHistory[]
 }
@@ -45,19 +48,23 @@ model Bill {
   user_id     Int
   description String
   amount      Int
-  due_date    DateTime
+  due_date    DateTime   @db.Timestamp(6)
+  created_at  DateTime   @default(now()) @db.Timestamp(6)
+  updated_at  DateTime?  @db.Timestamp(6)
+  deleted_at  DateTime?  @db.Timestamp(6)
   status      bill_types @default(pending)
 }
 
 model TransactionHistory {
   id               Int              @id @default(autoincrement())
   transferred_in   DateTime
-  transaction      Transaction      @relation(fields: [transaction_id], references: [id])
+  transaction      Transaction      @relation(fields: [transaction_id], references: [id], onDelete: Cascade)
   transaction_id   Int
   transaction_type transaction_type
   user             User             @relation(fields: [created_by], references: [id])
   created_by       Int
-  updated_at       DateTime?
+  updated_at       DateTime?        @db.Timestamp(6)
+  deleted_at       DateTime?        @db.Timestamp(6)
 }
 
 enum transaction_type {
