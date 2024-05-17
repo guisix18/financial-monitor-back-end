@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaTransactionRepository } from 'src/repositories/prisma/transaction/prisma-transaction.repository';
 import {
   CreateTransactionDto,
@@ -8,6 +8,10 @@ import {
 } from './dto/transaction.dto';
 import { UserFromJwt } from 'src/auth/models/UserFromJwt';
 import { RecordWithId } from 'src/common/record-with-id.dto';
+import {
+  TRANSACTION_NOT_FOUND,
+  TRANSACTION_NOT_FOUND_OR_DELETED,
+} from './utils/transactions.exceptions';
 
 @Injectable()
 export class TransactionService {
@@ -41,6 +45,13 @@ export class TransactionService {
     dto: UpdateTransactionDto,
     user: UserFromJwt,
   ): Promise<RecordWithId> {
+    const transaction = await this.transactionRepository.findOneTransaction(
+      id,
+      user,
+    );
+
+    if (!transaction) throw new NotFoundException(TRANSACTION_NOT_FOUND);
+
     const updatedTransaction =
       await this.transactionRepository.updateTransaction(id, dto, user);
 
@@ -50,6 +61,15 @@ export class TransactionService {
   }
 
   async deleteTransaction(id: number, user: UserFromJwt): Promise<void> {
+    const transaction = await this.transactionRepository.findOneTransaction(
+      id,
+      user,
+    );
+
+    if (!transaction) {
+      throw new NotFoundException(TRANSACTION_NOT_FOUND_OR_DELETED);
+    }
+
     return await this.transactionRepository.deleteTransaction(id, user);
   }
 }
