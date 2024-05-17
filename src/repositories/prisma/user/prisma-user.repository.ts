@@ -4,8 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UserRepository } from '../user/user.repository';
-import { UserItem, CreateUserDto, UpdateUserDto } from 'src/user/dto/user.dto';
+import { UserRepository } from '../../user/user.repository';
+import { UserInfos, CreateUserDto, UpdateUserDto } from 'src/user/dto/user.dto';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -45,7 +45,7 @@ export class PrismaUserRepository implements UserRepository {
     return user;
   }
 
-  async findOneUser(id: number): Promise<UserItem> {
+  async findOneUser(id: number): Promise<UserInfos> {
     const user = await this.prisma.user.findUnique({
       where: {
         id,
