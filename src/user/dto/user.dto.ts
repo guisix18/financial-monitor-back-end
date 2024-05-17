@@ -1,6 +1,7 @@
 import { PartialType } from '@nestjs/swagger';
-import { bill_types, transaction_type } from '@prisma/client';
+import { bill_types } from '@prisma/client';
 import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
+import { TransactionDto } from 'src/transaction/dto/transaction.dto';
 
 export class CreateUserDto {
   @IsString()
@@ -18,11 +19,11 @@ export class CreateUserDto {
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {}
 
-export class UserItem {
+export class UserInfos {
   name: string;
   email: string;
   bill: Bill[];
-  transaction: Transaction[];
+  transaction: TransactionDto[];
 }
 
 export class Bill {
@@ -30,12 +31,4 @@ export class Bill {
   amount: number;
   due_date: Date;
   status: bill_types;
-}
-
-export class Transaction {
-  description: string;
-  value: number;
-  category: string;
-  made_in: Date;
-  type: transaction_type;
 }

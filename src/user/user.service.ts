@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaUserRepository } from 'src/repositories/prisma/prisma-user.repository';
-import { UserItem, CreateUserDto, UpdateUserDto } from './dto/user.dto';
+import { PrismaUserRepository } from 'src/repositories/prisma//user/prisma-user.repository';
+import { UserInfos, CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { RecordWithId } from 'src/common/record-with-id.dto';
 import { User } from '@prisma/client';
 
@@ -20,7 +20,7 @@ export class UserService {
     return await this.userRepository.findUserByEmail(email);
   }
 
-  async findOneUser(id: number): Promise<UserItem> {
+  async findOneUser(id: number): Promise<UserInfos> {
     return await this.userRepository.findOneUser(id);
   }
 
