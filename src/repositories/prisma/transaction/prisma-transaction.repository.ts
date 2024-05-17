@@ -11,11 +11,7 @@ import {
   UpdateTransactionDto,
   UpdateTransactionHistoryDto,
 } from 'src/transaction/dto/transaction.dto';
-import {
-  TRANSACTION_HISTORY_NOT_FOUND,
-  TRANSACTION_NOT_FOUND,
-  TRANSACTION_NOT_FOUND_OR_DELETED,
-} from 'src/transaction/utils/transactions.exceptions';
+import { TRANSACTION_HISTORY_NOT_FOUND } from 'src/transaction/utils/transactions.exceptions';
 
 @Injectable()
 export class PrismaTransactionRepository implements TransactionRepository {
@@ -111,6 +107,33 @@ export class PrismaTransactionRepository implements TransactionRepository {
     return transactions;
   }
 
+  async findOneTransaction(
+    id: number,
+    user: UserFromJwt,
+  ): Promise<Transaction> {
+    return this.prisma.transaction.findUnique({
+      where: {
+        id,
+        user_id: user.id,
+      },
+    });
+  }
+
+  private async findOneTransactionHistory(
+    transaction_id: number,
+    user: UserFromJwt,
+    prismaTx: Prisma.TransactionClient,
+  ): Promise<TransactionHistory> {
+    return prismaTx.transactionHistory.findFirst({
+      where: {
+        transaction_id,
+        user: {
+          id: user.id,
+        },
+      },
+    });
+  }
+
   async updateTransaction(
     id: number,
     dto: UpdateTransactionDto,
@@ -127,16 +150,11 @@ export class PrismaTransactionRepository implements TransactionRepository {
           },
         });
 
-        if (!transaction) throw new NotFoundException(TRANSACTION_NOT_FOUND);
-
-        const transactionHistory = await prismaTx.transactionHistory.findFirst({
-          where: {
-            transaction_id: transaction.id,
-            user: {
-              id: user.id,
-            },
-          },
-        });
+        const transactionHistory = await this.findOneTransactionHistory(
+          transaction.id,
+          user,
+          prismaTx,
+        );
 
         if (!transactionHistory) {
           throw new NotFoundException(TRANSACTION_HISTORY_NOT_FOUND);
@@ -177,17 +195,6 @@ export class PrismaTransactionRepository implements TransactionRepository {
   }
 
   async deleteTransaction(id: number, user: UserFromJwt): Promise<void> {
-    const transaction = await this.prisma.transaction.findUnique({
-      where: {
-        id,
-        user_id: user.id,
-      },
-    });
-
-    if (!transaction) {
-      throw new NotFoundException(TRANSACTION_NOT_FOUND_OR_DELETED);
-    }
-
     await this.prisma.transaction.delete({
       where: {
         id,

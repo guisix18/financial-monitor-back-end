@@ -18,6 +18,11 @@ export abstract class TransactionRepository {
     user: UserFromJwt,
   ): Promise<TransactionDto[]>;
 
+  abstract findOneTransaction(
+    id: number,
+    user: UserFromJwt,
+  ): Promise<Transaction>;
+
   abstract updateTransaction(
     id: number,
     dto: UpdateTransactionDto,
