@@ -95,7 +95,7 @@ export class PrismaUserRepository implements UserRepository {
       data: {
         name: dto.name,
         email: dto.email,
-        password: dto.password,
+        password: bcrypt.hashSync(dto.password, 8),
       },
     });
 
