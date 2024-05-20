@@ -14,16 +14,6 @@ export class PrismaUserRepository implements UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async createUser(dto: CreateUserDto): Promise<User> {
-    const exists = await this.prisma.user.count({
-      where: {
-        email: dto.email,
-      },
-    });
-
-    if (exists > 0) {
-      throw new BadRequestException('Already exists an user with this email');
-    }
-
     const user = await this.prisma.user.create({
       data: {
         name: dto.name,
@@ -74,20 +64,10 @@ export class PrismaUserRepository implements UserRepository {
       },
     });
 
-    if (!user) throw new NotFoundException('User not found');
-
     return user;
   }
 
   async updateUser(dto: UpdateUserDto, id: number): Promise<User> {
-    const user = await this.prisma.user.count({
-      where: {
-        id,
-      },
-    });
-
-    if (!user) throw new NotFoundException('User not found');
-
     const updatedUser = await this.prisma.user.update({
       where: {
         id,
