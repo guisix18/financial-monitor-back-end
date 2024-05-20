@@ -26,6 +26,7 @@ export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   async createTransaction(
     @Body() dto: CreateTransactionDto,
     @CurrentUser() user: UserFromJwt,
@@ -34,6 +35,7 @@ export class TransactionController {
   }
 
   @Get()
+  @HttpCode(HttpStatus.OK)
   async findManyTransactions(
     @Query() filters: FilterTransaction,
     @CurrentUser() user: UserFromJwt,

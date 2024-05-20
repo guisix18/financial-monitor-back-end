@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaUserRepository } from 'src/repositories/prisma//user/prisma-user.repository';
 import { UserInfos, CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { RecordWithId } from 'src/common/record-with-id.dto';
@@ -9,10 +13,16 @@ export class UserService {
   constructor(private readonly userRepository: PrismaUserRepository) {}
 
   async createUser(dto: CreateUserDto): Promise<RecordWithId> {
-    const user = await this.userRepository.createUser(dto);
+    const user = await this.userRepository.findUserByEmail(dto.email);
+
+    if (user) {
+      throw new BadRequestException('Already exists an user with this email');
+    }
+
+    const createdUser = await this.userRepository.createUser(dto);
 
     return {
-      id: user.id,
+      id: createdUser.id,
     };
   }
 
@@ -21,10 +31,18 @@ export class UserService {
   }
 
   async findOneUser(id: number): Promise<UserInfos> {
-    return await this.userRepository.findOneUser(id);
+    const user = await this.userRepository.findOneUser(id);
+
+    if (!user) throw new NotFoundException('User not found');
+
+    return user;
   }
 
   async updateUser(dto: UpdateUserDto, id: number): Promise<RecordWithId> {
+    const user = await this.userRepository.findOneUser(id);
+
+    if (!user) throw new NotFoundException('User not found');
+
     const updatedUser = await this.userRepository.updateUser(dto, id);
 
     return {

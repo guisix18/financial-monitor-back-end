@@ -5,9 +5,10 @@ import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { TransactionModule } from './transaction/transaction.module';
+import { BillModule } from './bill/bill.module';
 
 @Module({
-  imports: [PrismaModule, UserModule, AuthModule, TransactionModule],
+  imports: [PrismaModule, UserModule, AuthModule, TransactionModule, BillModule],
   controllers: [],
   providers: [
     {
