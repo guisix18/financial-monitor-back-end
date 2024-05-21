@@ -195,10 +195,13 @@ export class PrismaTransactionRepository implements TransactionRepository {
   }
 
   async deleteTransaction(id: number, user: UserFromJwt): Promise<void> {
-    await this.prisma.transaction.delete({
+    await this.prisma.transaction.update({
       where: {
         id,
         user_id: user.id,
+      },
+      data: {
+        deleted_at: new Date(),
       },
     });
 

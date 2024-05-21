@@ -4,9 +4,10 @@ import { BillController } from './bill.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { BillRepository } from 'src/repositories/bill/bill.repository';
 import { PrismaBillRepository } from 'src/repositories/prisma/bill/prisma-bill.repository';
+import { UserModule } from 'src/user/user.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, UserModule],
   controllers: [BillController],
   providers: [
     PrismaBillRepository,
