@@ -1,6 +1,6 @@
 export interface UserPayload {
-  id: string;
-  sub: string;
+  id: number;
+  sub: number;
   email: string;
   name: string;
   is_active: boolean;

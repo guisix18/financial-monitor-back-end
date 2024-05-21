@@ -4,8 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { UserRepository } from '../user/user.repository';
-import { UserItem, CreateUserDto, UpdateUserDto } from 'src/user/dto/user.dto';
+import { UserRepository } from '../../user/user.repository';
+import { UserInfos, CreateUserDto, UpdateUserDto } from 'src/user/dto/user.dto';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -14,16 +14,6 @@ export class PrismaUserRepository implements UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async createUser(dto: CreateUserDto): Promise<User> {
-    const exists = await this.prisma.user.count({
-      where: {
-        email: dto.email,
-      },
-    });
-
-    if (exists > 0) {
-      throw new BadRequestException('Already exists an user with this email');
-    }
-
     const user = await this.prisma.user.create({
       data: {
         name: dto.name,
@@ -45,7 +35,7 @@ export class PrismaUserRepository implements UserRepository {
     return user;
   }
 
-  async findOneUser(id: number): Promise<UserItem> {
+  async findOneUser(id: number): Promise<UserInfos> {
     const user = await this.prisma.user.findUnique({
       where: {
         id,
@@ -74,20 +64,10 @@ export class PrismaUserRepository implements UserRepository {
       },
     });
 
-    if (!user) throw new NotFoundException('User not found');
-
     return user;
   }
 
   async updateUser(dto: UpdateUserDto, id: number): Promise<User> {
-    const user = await this.prisma.user.count({
-      where: {
-        id,
-      },
-    });
-
-    if (!user) throw new NotFoundException('User not found');
-
     const updatedUser = await this.prisma.user.update({
       where: {
         id,
@@ -95,7 +75,7 @@ export class PrismaUserRepository implements UserRepository {
       data: {
         name: dto.name,
         email: dto.email,
-        password: dto.password,
+        password: bcrypt.hashSync(dto.password, 8),
       },
     });
 
