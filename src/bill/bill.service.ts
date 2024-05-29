@@ -11,6 +11,7 @@ import { RecordWithId } from 'src/common/record-with-id.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { MailerService } from '@nestjs-modules/mailer';
 import { UserService } from 'src/user/user.service';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class BillService {
@@ -67,34 +68,64 @@ export class BillService {
     return await this.billRepository.deleteBill(id, user);
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  @Cron(CronExpression.EVERY_10_SECONDS)
   async handleBill() {
-    const now = new Date();
+    const now = dayjs();
+    console.log('NOW', now);
+    const tomorrow = now.add(1, 'day');
+    console.log('tomorrow =>', tomorrow);
 
-    const bills = await this.billRepository.getAllBills();
+    const billsDueTomorrow = await this.billRepository.getBillsDueTomorrow(
+      tomorrow,
+    );
+    const billsDueToday = await this.billRepository.getBillsDueToday(now);
 
-    const filterBills = bills.filter((bill) => {
-      return bill.status !== 'paid' && bill.due_date <= now;
-    });
+    if (billsDueTomorrow.length < 1 && billsDueToday.length < 1) return;
 
-    if (filterBills.length < 1) return;
-
-    for (const overdueBill of filterBills) {
-      await this.billRepository.updateBillStatus(overdueBill.id, 'overdue');
-    }
-
-    for (const bill of filterBills) {
+    for (const bill of billsDueTomorrow) {
       const user = await this.userService.findOneUser(bill.user_id);
 
-      if (!bill.already_notify) {
-        await this.mailer.sendMail({
-          to: user.email,
-          from: 'guisix16@gmail.com',
-          subject: `Sua fatura está vencida`,
-          html: `<h1>Sua fatura com ID ${bill.id} e descrição ${bill.description} está vencida`,
-        });
+      if (!bill.already_notify_1_day) {
+        await Promise.all([
+          this.billRepository.updateBillNotify(
+            bill.id,
+            user.email,
+            '1-day',
+            now,
+          ),
+          await this.mailer.sendMail({
+            to: user.email,
+            from: 'guisix16@gmail.com',
+            subject: `Sua fatura está prestes a vencer!`,
+            html: `<h1>Sua conta "${bill.description}" vence amanhã (${dayjs(
+              bill.due_date,
+            ).format('DD/MM/YYYY')}).</h1>`,
+          }),
+        ]);
+      }
+    }
 
-        await this.billRepository.updateBillNotify(bill.id, user.email);
+    for (const bill of billsDueToday) {
+      const user = await this.userService.findOneUser(bill.user_id);
+
+      if (!bill.already_notify_due_date) {
+        await Promise.all([
+          this.billRepository.updateBillStatus(bill.id, 'overdue', now),
+          this.billRepository.updateBillNotify(
+            bill.id,
+            user.email,
+            'due_date',
+            now,
+          ),
+          this.mailer.sendMail({
+            to: user.email,
+            from: 'guisix16@gmail.com',
+            subject: `Sua fatura está vencida!`,
+            html: `<h1>Sua conta "${bill.description}" vence hoje (${dayjs(
+              bill.due_date,
+            ).format('DD/MM/YYYY')}).</h1>`,
+          }),
+        ]);
       }
     }
   }
