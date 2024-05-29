@@ -11,7 +11,7 @@ import { RecordWithId } from 'src/common/record-with-id.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { MailerService } from '@nestjs-modules/mailer';
 import { UserService } from 'src/user/user.service';
-import * as dayjs from 'dayjs';
+const dayjs = require('dayjs');
 
 @Injectable()
 export class BillService {
