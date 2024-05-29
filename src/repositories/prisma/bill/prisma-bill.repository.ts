@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Bill, bill_types } from '@prisma/client';
+import { Dayjs } from 'dayjs';
 import { UserFromJwt } from 'src/auth/models/UserFromJwt';
 import {
   BillDto,
@@ -56,6 +57,35 @@ export class PrismaBillRepository implements BillRepository {
     return bills;
   }
 
+  async getBillsDueTomorrow(date: Dayjs): Promise<Bill[]> {
+    const bills = await this.prisma.bill.findMany({
+      where: {
+        due_date: {
+          lte: date.toDate(),
+          gt: date.toDate(),
+        },
+        status: 'pending',
+        already_notify_1_day: false,
+      },
+    });
+
+    return bills;
+  }
+
+  async getBillsDueToday(date: Dayjs): Promise<Bill[]> {
+    const bills = await this.prisma.bill.findMany({
+      where: {
+        due_date: {
+          lte: date.toDate(),
+        },
+        status: 'pending',
+        already_notify_due_date: false,
+      },
+    });
+
+    return bills;
+  }
+
   async getOneBill(id: number, user: UserFromJwt): Promise<BillDto> {
     const bill = await this.prisma.bill.findUnique({
       where: {
@@ -90,6 +120,7 @@ export class PrismaBillRepository implements BillRepository {
         description: dto.description,
         due_date: dto.due_date,
         status: dto.status,
+        updated_at: new Date(),
       },
     });
 
@@ -110,29 +141,57 @@ export class PrismaBillRepository implements BillRepository {
     return;
   }
 
-  async updateBillStatus(id: number, status: bill_types): Promise<void> {
+  async updateBillStatus(
+    id: number,
+    status: bill_types,
+    now: Dayjs,
+  ): Promise<void> {
     await this.prisma.bill.update({
       where: {
         id,
       },
       data: {
         status,
+        updated_at: now.toDate(),
       },
     });
     return;
   }
 
-  async updateBillNotify(id: number, email: string): Promise<void> {
-    await this.prisma.bill.update({
-      where: {
-        id,
-        user: {
-          email,
+  async updateBillNotify(
+    id: number,
+    email: string,
+    type: string,
+    now: Dayjs,
+  ): Promise<void> {
+    if (type === '1-day') {
+      await this.prisma.bill.update({
+        where: {
+          id,
+          user: {
+            email,
+          },
         },
-      },
-      data: {
-        already_notify: true,
-      },
-    });
+        data: {
+          already_notify_1_day: true,
+          updated_at: now.toDate(),
+        },
+      });
+    }
+
+    if (type === 'due_date') {
+      await this.prisma.bill.update({
+        where: {
+          id,
+          user: {
+            email,
+          },
+        },
+        data: {
+          already_notify_due_date: true,
+          updated_at: now.toDate(),
+        },
+      });
+    }
   }
 }
