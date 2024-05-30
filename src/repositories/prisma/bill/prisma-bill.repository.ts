@@ -58,11 +58,14 @@ export class PrismaBillRepository implements BillRepository {
   }
 
   async getBillsDueTomorrow(date: Dayjs): Promise<Bill[]> {
+    const startOfTomorrow = date.add(1, 'day').startOf('day');
+    const endOfTomorrow = date.add(1, 'day').endOf('day');
+
     const bills = await this.prisma.bill.findMany({
       where: {
         due_date: {
-          lte: date.toDate(),
-          gt: date.toDate(),
+          gte: startOfTomorrow.toDate(),
+          lte: endOfTomorrow.toDate(),
         },
         status: 'pending',
         already_notify_1_day: false,
