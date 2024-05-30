@@ -71,13 +71,8 @@ export class BillService {
   @Cron(CronExpression.EVERY_10_SECONDS)
   async handleBill() {
     const now = dayjs();
-    console.log('NOW', now);
-    const tomorrow = now.add(1, 'day');
-    console.log('tomorrow =>', tomorrow);
 
-    const billsDueTomorrow = await this.billRepository.getBillsDueTomorrow(
-      tomorrow,
-    );
+    const billsDueTomorrow = await this.billRepository.getBillsDueTomorrow(now);
     const billsDueToday = await this.billRepository.getBillsDueToday(now);
 
     if (billsDueTomorrow.length < 1 && billsDueToday.length < 1) return;
