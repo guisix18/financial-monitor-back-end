@@ -50,6 +50,7 @@ export class FilterTransaction {
 export class UpdateTransactionDto extends PartialType(CreateTransactionDto) {}
 
 export class TransactionDto {
+  id: number;
   description: string;
   value: number;
   category: string;
