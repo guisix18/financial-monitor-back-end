@@ -11,7 +11,10 @@ import { RecordWithId } from 'src/common/record-with-id.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { MailerService } from '@nestjs-modules/mailer';
 import { UserService } from 'src/user/user.service';
-const dayjs = require('dayjs');
+import { PrismaService } from 'src/prisma/prisma.service';
+import { Bill, Prisma } from '@prisma/client';
+import { Dayjs } from 'dayjs';
+const dayjs = require('dayjs'); //BRUH, por que não funciona sem importar assim?
 
 @Injectable()
 export class BillService {
@@ -19,6 +22,7 @@ export class BillService {
     private readonly billRepository: PrismaBillRepository,
     private readonly userService: UserService,
     @Inject(MailerService) private readonly mailer: MailerService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async createBill(
@@ -68,60 +72,100 @@ export class BillService {
     return await this.billRepository.deleteBill(id, user);
   }
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_DAY_AT_1PM)
   async handleBill() {
     const now = dayjs();
 
-    const billsDueTomorrow = await this.billRepository.getBillsDueTomorrow(now);
-    const billsDueToday = await this.billRepository.getBillsDueToday(now);
+    await this.prisma.$transaction(
+      async (prismaTx: Prisma.TransactionClient) => {
+        const locked: { locked: boolean }[] =
+          await prismaTx.$queryRaw`SELECT pg_try_advisory_lock(1) as locked;`;
 
-    if (billsDueTomorrow.length < 1 && billsDueToday.length < 1) return;
+        if (!locked[0].locked) return;
 
-    for (const bill of billsDueTomorrow) {
-      const user = await this.userService.findOneUser(bill.user_id);
+        const billsDueTomorrow = await this.billRepository.getBillsDueTomorrow({
+          date: now,
+          prismaTx,
+        });
 
-      if (!bill.already_notify_1_day) {
-        await Promise.all([
-          this.billRepository.updateBillNotify(
-            bill.id,
-            user.email,
-            '1-day',
-            now,
-          ),
-          await this.mailer.sendMail({
-            to: user.email,
-            from: 'guisix16@gmail.com',
-            subject: `Sua fatura está prestes a vencer!`,
-            html: `<h1>Sua conta "${bill.description}" vence amanhã (${dayjs(
-              bill.due_date,
-            ).format('DD/MM/YYYY')}).</h1>`,
-          }),
-        ]);
-      }
-    }
+        const billsDueToday = await this.billRepository.getBillsDueToday({
+          date: now,
+          prismaTx,
+        });
 
-    for (const bill of billsDueToday) {
-      const user = await this.userService.findOneUser(bill.user_id);
+        if (billsDueTomorrow.length === 0 && billsDueToday.length === 0) return;
 
-      if (!bill.already_notify_due_date) {
-        await Promise.all([
-          this.billRepository.updateBillStatus(bill.id, 'overdue', now),
-          this.billRepository.updateBillNotify(
-            bill.id,
-            user.email,
-            'due_date',
-            now,
-          ),
-          this.mailer.sendMail({
-            to: user.email,
-            from: 'guisix16@gmail.com',
-            subject: `Sua fatura está vencida!`,
-            html: `<h1>Sua conta "${bill.description}" vence hoje (${dayjs(
-              bill.due_date,
-            ).format('DD/MM/YYYY')}).</h1>`,
-          }),
-        ]);
-      }
-    }
+        for (const bill of billsDueTomorrow) {
+          await this.handleTomorrowBills(bill, now);
+        }
+
+        for (const bill of billsDueToday) {
+          await this.handleTodayBills(bill, now);
+        }
+      },
+      {
+        maxWait: 15000,
+        timeout: 60 * 1000,
+        isolationLevel: 'ReadCommitted',
+      },
+    );
+  }
+
+  private async handleTomorrowBills(bill: Bill, now: Dayjs) {
+    await this.prisma.$transaction(
+      async (prismaTx: Prisma.TransactionClient) => {
+        const user = await this.userService.findOneUser(bill.user_id);
+
+        if (!bill.already_notify_1_day) {
+          await Promise.all([
+            this.billRepository.updateBillNotify({
+              id: bill.id,
+
+              type: '1-day',
+              now,
+              prismaTx,
+            }),
+            this.sendMail(user.email, bill),
+          ]);
+        }
+      },
+    );
+  }
+
+  private async handleTodayBills(bill: Bill, now: Dayjs) {
+    await this.prisma.$transaction(
+      async (prismaTx: Prisma.TransactionClient) => {
+        if (!bill.already_notify_due_date) {
+          const user = await this.userService.findOneUser(bill.user_id);
+
+          await Promise.all([
+            this.billRepository.updateBillStatus({
+              id: bill.id,
+              status: 'overdue',
+              now,
+              prismaTx,
+            }),
+            this.billRepository.updateBillNotify({
+              id: bill.id,
+              type: 'due_date',
+              now,
+              prismaTx,
+            }),
+            this.sendMail(user.email, bill),
+          ]);
+        }
+      },
+    );
+  }
+
+  private async sendMail(email: string, bill: Bill) {
+    return this.mailer.sendMail({
+      to: email,
+      from: 'guisix16@gmail.com',
+      subject: `Sua fatura está vencida!`,
+      html: `<h1>Sua conta "${bill.description}" vence hoje (${dayjs(
+        bill.due_date,
+      ).format('DD/MM/YYYY')}).</h1>`,
+    });
   }
 }
