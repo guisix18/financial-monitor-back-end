@@ -1,15 +1,22 @@
-import { Injectable } from '@nestjs/common';
-import { Bill, bill_types } from '@prisma/client';
-import { Dayjs } from 'dayjs';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { Bill } from '@prisma/client';
 import { UserFromJwt } from 'src/auth/models/UserFromJwt';
 import {
   BillDto,
   CreateBillDto,
   FilterBill,
+  FilterBillInterval,
   UpdateBillDto,
+  UpdateBillNotifyParams,
+  UpdateBillStatus,
 } from 'src/bill/dto/bill.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { BillRepository } from 'src/repositories/bill/bill.repository';
+
+type NotifyTypeMapping = {
+  '1-day': 'already_notify_1_day';
+  due_date: 'already_notify_due_date';
+};
 
 @Injectable()
 export class PrismaBillRepository implements BillRepository {
@@ -57,11 +64,13 @@ export class PrismaBillRepository implements BillRepository {
     return bills;
   }
 
-  async getBillsDueTomorrow(date: Dayjs): Promise<Bill[]> {
+  async getBillsDueTomorrow(params: FilterBillInterval): Promise<Bill[]> {
+    const { date, prismaTx } = params;
+
     const startOfTomorrow = date.add(1, 'day').startOf('day');
     const endOfTomorrow = date.add(1, 'day').endOf('day');
 
-    const bills = await this.prisma.bill.findMany({
+    const bills = await prismaTx.bill.findMany({
       where: {
         due_date: {
           gte: startOfTomorrow.toDate(),
@@ -75,8 +84,10 @@ export class PrismaBillRepository implements BillRepository {
     return bills;
   }
 
-  async getBillsDueToday(date: Dayjs): Promise<Bill[]> {
-    const bills = await this.prisma.bill.findMany({
+  async getBillsDueToday(params: FilterBillInterval): Promise<Bill[]> {
+    const { date, prismaTx } = params;
+
+    const bills = await prismaTx.bill.findMany({
       where: {
         due_date: {
           lte: date.toDate(),
@@ -144,12 +155,12 @@ export class PrismaBillRepository implements BillRepository {
     return;
   }
 
-  async updateBillStatus(
-    id: number,
-    status: bill_types,
-    now: Dayjs,
-  ): Promise<void> {
-    await this.prisma.bill.update({
+  async updateBillStatus(params: UpdateBillStatus): Promise<void> {
+    const { id, status, now, prismaTx } = params;
+
+    if (!id) throw new BadRequestException('Bill ID is required');
+
+    await prismaTx.bill.update({
       where: {
         id,
       },
@@ -161,40 +172,30 @@ export class PrismaBillRepository implements BillRepository {
     return;
   }
 
-  async updateBillNotify(
-    id: number,
-    email: string,
-    type: string,
-    now: Dayjs,
-  ): Promise<void> {
-    if (type === '1-day') {
-      await this.prisma.bill.update({
+  async updateBillNotify(params: UpdateBillNotifyParams): Promise<void> {
+    const { id, type, now, prismaTx } = params;
+
+    if (!id) throw new BadRequestException('Bill ID is required');
+
+    const notifyType: NotifyTypeMapping = {
+      '1-day': 'already_notify_1_day',
+      due_date: 'already_notify_due_date',
+    };
+
+    const notifyField = notifyType[type];
+
+    if (notifyField) {
+      await prismaTx.bill.update({
         where: {
           id,
-          user: {
-            email,
-          },
         },
         data: {
-          already_notify_1_day: true,
+          [notifyField]: true,
           updated_at: now.toDate(),
         },
       });
     }
 
-    if (type === 'due_date') {
-      await this.prisma.bill.update({
-        where: {
-          id,
-          user: {
-            email,
-          },
-        },
-        data: {
-          already_notify_due_date: true,
-          updated_at: now.toDate(),
-        },
-      });
-    }
+    throw new Error('Notify type not found');
   }
 }
