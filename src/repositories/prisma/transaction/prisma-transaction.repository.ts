@@ -46,7 +46,9 @@ export class PrismaTransactionRepository implements TransactionRepository {
 
         return transaction;
       },
-      { isolationLevel: 'Serializable' },
+      {
+        isolationLevel: 'Serializable',
+      },
     );
 
     return transaction;
@@ -188,6 +190,9 @@ export class PrismaTransactionRepository implements TransactionRepository {
         );
 
         return updatedTransaction;
+      },
+      {
+        isolationLevel: 'Serializable',
       },
     );
 
