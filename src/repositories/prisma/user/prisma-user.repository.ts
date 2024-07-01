@@ -1,11 +1,11 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { UserRepository } from '../../user/user.repository';
-import { UserInfos, CreateUserDto, UpdateUserDto } from 'src/user/dto/user.dto';
+import {
+  UserInfos,
+  CreateUserDto,
+  UpdateUserDto,
+} from '../../../user/dto/user.dto';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -54,6 +54,7 @@ export class PrismaUserRepository implements UserRepository {
         },
         transaction: {
           select: {
+            id: true,
             description: true,
             category: true,
             made_in: true,

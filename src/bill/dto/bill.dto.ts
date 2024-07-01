@@ -1,5 +1,5 @@
 import { PartialType } from '@nestjs/swagger';
-import { bill_types } from '@prisma/client';
+import { Prisma, bill_types } from '@prisma/client';
 import {
   IsEnum,
   IsISO8601,
@@ -9,6 +9,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { Dayjs } from 'dayjs';
 
 export class CreateBillDto {
   @IsString()
@@ -50,4 +51,23 @@ export class BillDto {
   due_date: Date;
   status: bill_types;
   created_at: Date;
+}
+
+export class UpdateBillNotifyParams {
+  id: number;
+  type: string;
+  now: Dayjs;
+  prismaTx: Prisma.TransactionClient;
+}
+
+export class UpdateBillStatus {
+  id: number;
+  status: bill_types;
+  now: Dayjs;
+  prismaTx: Prisma.TransactionClient;
+}
+
+export class FilterBillInterval {
+  date: Dayjs;
+  prismaTx: Prisma.TransactionClient;
 }
