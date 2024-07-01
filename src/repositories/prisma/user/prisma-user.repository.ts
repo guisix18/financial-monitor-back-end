@@ -1,7 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { UserRepository } from '../../user/user.repository';
-import { UserInfos, CreateUserDto, UpdateUserDto } from 'src/user/dto/user.dto';
+import {
+  UserInfos,
+  CreateUserDto,
+  UpdateUserDto,
+} from '../../../user/dto/user.dto';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
