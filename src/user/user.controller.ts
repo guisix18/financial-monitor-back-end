@@ -11,9 +11,9 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto, UserInfos } from './dto/user.dto';
-import { RecordWithId } from 'src/common/record-with-id.dto';
-import { FindOneParams } from 'src/common/find-one-params.dto';
-import { IsPublic } from 'src/auth/decorators/is-public.decorator';
+import { RecordWithId } from '../../src/common/record-with-id.dto';
+import { FindOneParams } from '../../src/common/find-one-params.dto';
+import { IsPublic } from '../../src/auth/decorators/is-public.decorator';
 
 @Controller('user')
 export class UserController {
