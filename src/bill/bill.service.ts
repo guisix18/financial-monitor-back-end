@@ -21,8 +21,8 @@ export class BillService {
   constructor(
     private readonly billRepository: PrismaBillRepository,
     private readonly userService: UserService,
-    @Inject(MailerService) private readonly mailer: MailerService,
     private readonly prisma: PrismaService,
+    @Inject(MailerService) private readonly mailer: MailerService,
   ) {}
 
   async createBill(
@@ -83,25 +83,28 @@ export class BillService {
 
         if (!locked[0].locked) return;
 
-        const billsDueTomorrow = await this.billRepository.getBillsDueTomorrow({
-          date: now,
-          prismaTx,
-        });
-
-        const billsDueToday = await this.billRepository.getBillsDueToday({
-          date: now,
-          prismaTx,
-        });
+        const [billsDueTomorrow, billsDueToday] = await Promise.all([
+          this.billRepository.getBillsDueTomorrow({
+            date: now,
+            prismaTx,
+          }),
+          this.billRepository.getBillsDueToday({
+            date: now,
+            prismaTx,
+          }),
+        ]);
 
         if (billsDueTomorrow.length === 0 && billsDueToday.length === 0) return;
 
-        for (const bill of billsDueTomorrow) {
-          await this.handleTomorrowBills(bill, now);
-        }
+        const billsOfTommorow = billsDueTomorrow.map((bill) =>
+          this.handleTomorrowBills(bill, now),
+        );
 
-        for (const bill of billsDueToday) {
-          await this.handleTodayBills(bill, now);
-        }
+        const billsOfToday = billsDueToday.map((bill) =>
+          this.handleTodayBills(bill, now),
+        );
+
+        await Promise.all([billsOfTommorow, billsOfToday]);
       },
       {
         maxWait: 15000,
@@ -114,9 +117,9 @@ export class BillService {
   private async handleTomorrowBills(bill: Bill, now: Dayjs) {
     await this.prisma.$transaction(
       async (prismaTx: Prisma.TransactionClient) => {
-        const user = await this.userService.findOneUser(bill.user_id);
-
         if (!bill.already_notify_1_day) {
+          const user = await this.userService.findOneUser(bill.user_id);
+
           await Promise.all([
             this.billRepository.updateBillNotify({
               id: bill.id,
