@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaBillRepository } from 'src/repositories/prisma/bill/prisma-bill.repository';
 import {
   BillDto,
@@ -14,7 +19,7 @@ import { UserService } from 'src/user/user.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Bill, Prisma } from '@prisma/client';
 import { Dayjs } from 'dayjs';
-const dayjs = require('dayjs'); //BRUH, por que não funciona sem importar assim?
+import dayjs from 'dayjs'; //BRUH, por que não funciona sem importar assim?
 
 @Injectable()
 export class BillService {
@@ -29,6 +34,10 @@ export class BillService {
     dto: CreateBillDto,
     user: UserFromJwt,
   ): Promise<RecordWithId> {
+    if (dayjs(dto.due_date).isBefore(dayjs())) {
+      throw new BadRequestException('Due date must be in the future');
+    }
+
     const bill = await this.billRepository.createBill(dto, user);
 
     return {
