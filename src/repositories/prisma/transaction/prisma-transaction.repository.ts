@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, Transaction, TransactionHistory } from '@prisma/client';
 import { UserFromJwt } from 'src/auth/models/UserFromJwt';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { TransactionRepository } from 'src/repositories/transaction/transaction.repository';
+import { TransactionRepository } from 'src/contracts/transaction/transaction.repository';
 import {
   CreateTransactionDto,
   FilterTransaction,

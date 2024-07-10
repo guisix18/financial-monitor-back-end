@@ -132,7 +132,6 @@ export class BillService {
           await Promise.all([
             this.billRepository.updateBillNotify({
               id: bill.id,
-
               type: '1-day',
               now,
               prismaTx,
