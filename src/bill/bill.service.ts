@@ -62,6 +62,10 @@ export class BillService {
     dto: UpdateBillDto,
     user: UserFromJwt,
   ): Promise<RecordWithId> {
+    if (dto.due_date && dayjs(dto.due_date).isBefore(dayjs())) {
+      throw new BadRequestException('Due date must be in the future');
+    }
+
     const bill = await this.billRepository.getOneBill(id, user);
 
     if (!bill) throw new NotFoundException('Bill not found');
