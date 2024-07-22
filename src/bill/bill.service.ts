@@ -19,7 +19,8 @@ import { UserService } from 'src/user/user.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Bill, Prisma } from '@prisma/client';
 import { Dayjs } from 'dayjs';
-import dayjs from 'dayjs'; //BRUH, por que não funciona sem importar assim?
+const dayjs = require('dayjs'); //BRUH, por que não funciona sem importar assim?
+import { bill_locker } from 'src/common/advisory-lock';
 
 @Injectable()
 export class BillService {
@@ -92,7 +93,7 @@ export class BillService {
     await this.prisma.$transaction(
       async (prismaTx: Prisma.TransactionClient) => {
         const locked: { locked: boolean }[] =
-          await prismaTx.$queryRaw`SELECT pg_try_advisory_lock(1) as locked;`;
+          await prismaTx.$queryRaw`SELECT pg_try_advisory_lock(${bill_locker}) as locked;`;
 
         if (!locked[0].locked) return;
 
