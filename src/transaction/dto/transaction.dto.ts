@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Max,
   MaxLength,
   Min,
   MinLength,
@@ -18,7 +19,8 @@ export class CreateTransactionDto {
   description: string;
 
   @IsNumber()
-  @Min(1)
+  @Min(0.1)
+  @Max(999999999)
   value: number;
 
   @IsString()
@@ -26,11 +28,12 @@ export class CreateTransactionDto {
   @MinLength(1)
   category: string;
 
+  @IsOptional()
   @IsEnum(transaction_type)
-  type: transaction_type;
+  type?: transaction_type;
 
-  @IsISO8601()
-  made_in: Date;
+  @IsNumber()
+  send_to_id: number;
 }
 
 export class FilterTransaction {
@@ -54,7 +57,7 @@ export class TransactionDto {
   description: string;
   value: number;
   category: string;
-  made_in: Date;
+  created_at: Date;
   type: transaction_type;
 }
 
