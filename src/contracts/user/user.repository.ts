@@ -7,4 +7,5 @@ export abstract class UserRepository {
   abstract findOneUser(id: number): Promise<UserInfos>;
   abstract updateUser(dto: UpdateUserDto, id: number): Promise<User>;
   abstract deleteUser(id: number): Promise<void>;
+  abstract validateAccount(user: User): Promise<void>;
 }
