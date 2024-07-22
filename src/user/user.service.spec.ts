@@ -1,10 +1,11 @@
-import { UserRepository } from '../../src/repositories/user/user.repository';
+import { UserRepository } from '../contracts/user/user.repository';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { PrismaUserRepository } from '../../src/repositories/prisma/user/prisma-user.repository';
 import { Test } from '@nestjs/testing';
 import { PrismaModule } from '../../src/prisma/prisma.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { request } from 'express';
 
 const mockedResult = {
   id: 2,
@@ -79,7 +80,7 @@ describe('UserService', () => {
       jest.spyOn(userRepository, 'findUserByEmail').mockResolvedValue(null);
       jest.spyOn(userService, 'createUser').mockResolvedValue({ id: 1 });
 
-      const user = await userService.createUser(dto);
+      const user = await userService.createUser(dto, request);
 
       expect(user).toEqual({ id: user.id });
     });
@@ -95,7 +96,7 @@ describe('UserService', () => {
         .spyOn(userRepository, 'findUserByEmail')
         .mockResolvedValue(mockedResult);
 
-      await expect(userService.createUser(dto)).rejects.toThrow(
+      await expect(userService.createUser(dto, request)).rejects.toThrow(
         new BadRequestException('Already exists an user with this email'),
       );
     });

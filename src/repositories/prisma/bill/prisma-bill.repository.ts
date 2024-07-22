@@ -11,7 +11,7 @@ import {
   UpdateBillStatus,
 } from 'src/bill/dto/bill.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { BillRepository } from 'src/repositories/bill/bill.repository';
+import { BillRepository } from 'src/contracts/bill/bill.repository';
 
 type NotifyTypeMapping = {
   '1-day': 'already_notify_1_day';

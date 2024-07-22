@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaBillRepository } from 'src/repositories/prisma/bill/prisma-bill.repository';
 import {
   BillDto,
@@ -15,20 +20,25 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { Bill, Prisma } from '@prisma/client';
 import { Dayjs } from 'dayjs';
 const dayjs = require('dayjs'); //BRUH, por que não funciona sem importar assim?
+import { bill_locker } from 'src/common/advisory-lock';
 
 @Injectable()
 export class BillService {
   constructor(
     private readonly billRepository: PrismaBillRepository,
     private readonly userService: UserService,
-    @Inject(MailerService) private readonly mailer: MailerService,
     private readonly prisma: PrismaService,
+    @Inject(MailerService) private readonly mailer: MailerService,
   ) {}
 
   async createBill(
     dto: CreateBillDto,
     user: UserFromJwt,
   ): Promise<RecordWithId> {
+    if (dayjs(dto.due_date).isBefore(dayjs())) {
+      throw new BadRequestException('Due date must be in the future');
+    }
+
     const bill = await this.billRepository.createBill(dto, user);
 
     return {
@@ -53,6 +63,10 @@ export class BillService {
     dto: UpdateBillDto,
     user: UserFromJwt,
   ): Promise<RecordWithId> {
+    if (dto.due_date && dayjs(dto.due_date).isBefore(dayjs())) {
+      throw new BadRequestException('Due date must be in the future');
+    }
+
     const bill = await this.billRepository.getOneBill(id, user);
 
     if (!bill) throw new NotFoundException('Bill not found');
@@ -79,29 +93,32 @@ export class BillService {
     await this.prisma.$transaction(
       async (prismaTx: Prisma.TransactionClient) => {
         const locked: { locked: boolean }[] =
-          await prismaTx.$queryRaw`SELECT pg_try_advisory_lock(1) as locked;`;
+          await prismaTx.$queryRaw`SELECT pg_try_advisory_lock(${bill_locker}) as locked;`;
 
         if (!locked[0].locked) return;
 
-        const billsDueTomorrow = await this.billRepository.getBillsDueTomorrow({
-          date: now,
-          prismaTx,
-        });
-
-        const billsDueToday = await this.billRepository.getBillsDueToday({
-          date: now,
-          prismaTx,
-        });
+        const [billsDueTomorrow, billsDueToday] = await Promise.all([
+          this.billRepository.getBillsDueTomorrow({
+            date: now,
+            prismaTx,
+          }),
+          this.billRepository.getBillsDueToday({
+            date: now,
+            prismaTx,
+          }),
+        ]);
 
         if (billsDueTomorrow.length === 0 && billsDueToday.length === 0) return;
 
-        for (const bill of billsDueTomorrow) {
-          await this.handleTomorrowBills(bill, now);
-        }
+        const billsOfTommorow = billsDueTomorrow.map((bill) =>
+          this.handleTomorrowBills(bill, now),
+        );
 
-        for (const bill of billsDueToday) {
-          await this.handleTodayBills(bill, now);
-        }
+        const billsOfToday = billsDueToday.map((bill) =>
+          this.handleTodayBills(bill, now),
+        );
+
+        await Promise.all([billsOfTommorow, billsOfToday]);
       },
       {
         maxWait: 15000,
@@ -114,13 +131,12 @@ export class BillService {
   private async handleTomorrowBills(bill: Bill, now: Dayjs) {
     await this.prisma.$transaction(
       async (prismaTx: Prisma.TransactionClient) => {
-        const user = await this.userService.findOneUser(bill.user_id);
-
         if (!bill.already_notify_1_day) {
+          const user = await this.userService.findOneUser(bill.user_id);
+
           await Promise.all([
             this.billRepository.updateBillNotify({
               id: bill.id,
-
               type: '1-day',
               now,
               prismaTx,

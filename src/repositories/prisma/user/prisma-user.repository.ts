@@ -1,12 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
-import { UserRepository } from '../../user/user.repository';
+import { UserRepository } from '../../../contracts/user/user.repository';
 import {
   UserInfos,
   CreateUserDto,
   UpdateUserDto,
 } from '../../../user/dto/user.dto';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -23,6 +23,47 @@ export class PrismaUserRepository implements UserRepository {
     });
 
     return user;
+  }
+
+  async validateAccount(user: User): Promise<void> {
+    if (user.is_active) {
+      throw new BadRequestException('User already validated');
+    }
+
+    const now = new Date();
+
+    await this.prisma.$transaction(
+      async (prismaTx: Prisma.TransactionClient) => {
+        const wallet = await prismaTx.wallet.create({
+          data: {
+            user_id: user.id,
+            balance: 0,
+            created_at: now,
+          },
+        });
+
+        await Promise.all([
+          await prismaTx.account.create({
+            data: {
+              user_id: user.id,
+              wallet_id: wallet.id,
+              created_at: now,
+            },
+          }),
+          await prismaTx.user.update({
+            where: {
+              id: user.id,
+            },
+            data: {
+              is_active: true,
+              updated_at: now,
+            },
+          }),
+        ]);
+      },
+    );
+
+    return;
   }
 
   async findUserByEmail(email: string): Promise<User> {
@@ -57,7 +98,7 @@ export class PrismaUserRepository implements UserRepository {
             id: true,
             description: true,
             category: true,
-            made_in: true,
+            created_at: true,
             value: true,
             type: true,
           },
@@ -95,5 +136,15 @@ export class PrismaUserRepository implements UserRepository {
     });
 
     return;
+  }
+
+  async findUserComplete(id: number): Promise<User> {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    return user;
   }
 }
