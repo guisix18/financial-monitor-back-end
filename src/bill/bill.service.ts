@@ -97,28 +97,33 @@ export class BillService {
 
         if (!locked[0].locked) return;
 
-        const [billsDueTomorrow, billsDueToday] = await Promise.all([
-          this.billRepository.getBillsDueTomorrow({
-            date: now,
-            prismaTx,
-          }),
-          this.billRepository.getBillsDueToday({
-            date: now,
-            prismaTx,
-          }),
-        ]);
+        try {
+          const [billsDueTomorrow, billsDueToday] = await Promise.all([
+            this.billRepository.getBillsDueTomorrow({
+              date: now,
+              prismaTx,
+            }),
+            this.billRepository.getBillsDueToday({
+              date: now,
+              prismaTx,
+            }),
+          ]);
 
-        if (billsDueTomorrow.length === 0 && billsDueToday.length === 0) return;
+          if (billsDueTomorrow.length === 0 && billsDueToday.length === 0)
+            return;
 
-        const billsOfTommorow = billsDueTomorrow.map((bill) =>
-          this.handleTomorrowBills(bill, now),
-        );
+          const billsOfTommorow = billsDueTomorrow.map((bill) =>
+            this.handleTomorrowBills(bill, now),
+          );
 
-        const billsOfToday = billsDueToday.map((bill) =>
-          this.handleTodayBills(bill, now),
-        );
+          const billsOfToday = billsDueToday.map((bill) =>
+            this.handleTodayBills(bill, now),
+          );
 
-        await Promise.all([billsOfTommorow, billsOfToday]);
+          await Promise.all([billsOfTommorow, billsOfToday]);
+        } finally {
+          await prismaTx.$queryRaw`SELECT pg_advisory_unlock(${bill_locker});`;
+        }
       },
       {
         maxWait: 15000,
