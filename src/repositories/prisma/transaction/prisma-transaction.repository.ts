@@ -53,7 +53,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
         });
 
         if (!userToReceive || !userToReceive.is_active) {
-          throw new BadRequestException('User not found or inactive');
+          throw new BadRequestException('Receiver not found or inactive');
         }
 
         const locked: { locked: boolean }[] =
@@ -177,6 +177,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
       return prismaTx.transactionHistory.update({
         where: {
           id: transaction_history_id,
+          deleted_at: null,
         },
         data: {
           transferred_in: data.transferred_in,
@@ -242,6 +243,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
     return prismaTx.transactionHistory.findFirst({
       where: {
         transaction_id,
+        deleted_at: null,
         user: {
           id: user.id,
         },
