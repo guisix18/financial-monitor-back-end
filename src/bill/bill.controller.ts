@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { BillService } from './bill.service';
 import {
@@ -21,6 +22,8 @@ import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { UserFromJwt } from 'src/auth/models/UserFromJwt';
 import { RecordWithId } from 'src/common/record-with-id.dto';
 import { FindOneParams } from 'src/common/find-one-params.dto';
+import { CheckResource } from 'src/auth/decorators/check-resource.decorator';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
 
 @Controller('bill')
 export class BillController {
@@ -45,6 +48,8 @@ export class BillController {
   }
 
   @Get('/:id')
+  @UseGuards(RolesGuard)
+  @CheckResource('bill')
   @HttpCode(HttpStatus.OK)
   async getOneBill(
     @Param() filters: FindOneParams,
@@ -54,6 +59,8 @@ export class BillController {
   }
 
   @Patch('/:id')
+  @UseGuards(RolesGuard)
+  @CheckResource('bill')
   @HttpCode(HttpStatus.ACCEPTED)
   async updateBill(
     @Param() filters: FindOneParams,
@@ -64,6 +71,8 @@ export class BillController {
   }
 
   @Delete('/:id')
+  @UseGuards(RolesGuard)
+  @CheckResource('bill')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteBill(
     @Param() filters: FindOneParams,
