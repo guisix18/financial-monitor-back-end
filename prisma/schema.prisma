@@ -25,10 +25,6 @@ model User {
   transaction        Transaction[]
   bill               Bill[]
   transactionHistory TransactionHistory[]
-  account            Account?
-  wallet             Wallet?
-  send_to            Transaction[]        @relation("send_to")
-  received_by        Transaction[]        @relation("received_by")
 }
 
 model Transaction {
@@ -36,13 +32,10 @@ model Transaction {
   sender_user        User                 @relation(fields: [user_id], references: [id])
   user_id            Int
   description        String?
-  send_to_id         Int?
-  send_to            User?                @relation("send_to", fields: [send_to_id], references: [id])
-  received_by_id     Int?
-  received_by        User?                @relation("received_by", fields: [received_by_id], references: [id])
   value              Int
   category           String
   created_at         DateTime             @default(now()) @db.Timestamp(6)
+  made_in            DateTime             @db.Timestamp(6)
   updated_at         DateTime?            @db.Timestamp(6)
   deleted_at         DateTime?            @db.Timestamp(6)
   type               transaction_type
@@ -74,32 +67,6 @@ model TransactionHistory {
   created_by       Int
   updated_at       DateTime?        @db.Timestamp(6)
   deleted_at       DateTime?        @db.Timestamp(6)
-}
-
-model Account {
-  id         Int       @id @default(autoincrement())
-  user       User?     @relation(fields: [user_id], references: [id])
-  user_id    Int
-  wallet_id  Int       @unique
-  wallet     Wallet?   @relation(fields: [wallet_id], references: [id])
-  created_at DateTime  @default(now()) @db.Timestamp(6)
-  updated_at DateTime? @db.Timestamp(6)
-  deleted_at DateTime? @db.Timestamp(6)
-
-  @@unique([user_id])
-}
-
-model Wallet {
-  id         Int       @id @default(autoincrement())
-  user       User?     @relation(fields: [user_id], references: [id])
-  user_id    Int
-  balance    Decimal
-  created_at DateTime  @default(now()) @db.Timestamp(6)
-  updated_at DateTime? @db.Timestamp(6)
-  deleted_at DateTime? @db.Timestamp(6)
-  account    Account?
-
-  @@unique([user_id])
 }
 
 enum transaction_type {

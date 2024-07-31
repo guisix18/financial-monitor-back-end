@@ -34,32 +34,16 @@ export class PrismaUserRepository implements UserRepository {
 
     await this.prisma.$transaction(
       async (prismaTx: Prisma.TransactionClient) => {
-        const wallet = await prismaTx.wallet.create({
+        await prismaTx.user.update({
+          where: {
+            id: user.id,
+            is_active: false,
+          },
           data: {
-            user_id: user.id,
-            balance: 0,
-            created_at: now,
+            is_active: true,
+            updated_at: now,
           },
         });
-
-        await Promise.all([
-          await prismaTx.account.create({
-            data: {
-              user_id: user.id,
-              wallet_id: wallet.id,
-              created_at: now,
-            },
-          }),
-          await prismaTx.user.update({
-            where: {
-              id: user.id,
-            },
-            data: {
-              is_active: true,
-              updated_at: now,
-            },
-          }),
-        ]);
       },
     );
 

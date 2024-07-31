@@ -9,7 +9,6 @@ import {
   HttpCode,
   HttpStatus,
   Req,
-  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto, UserInfos } from './dto/user.dto';
@@ -17,8 +16,6 @@ import { RecordWithId } from '../../src/common/record-with-id.dto';
 import { FindOneParams } from '../../src/common/find-one-params.dto';
 import { IsPublic } from '../../src/auth/decorators/is-public.decorator';
 import { Request } from 'express';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { CheckResource } from 'src/auth/decorators/check-resource.decorator';
 
 @Controller('user')
 export class UserController {
@@ -42,16 +39,12 @@ export class UserController {
   }
 
   @Get('/:id')
-  @UseGuards(RolesGuard)
-  @CheckResource('user')
   @HttpCode(HttpStatus.OK)
   async findOneUser(@Param() filters: FindOneParams): Promise<UserInfos> {
     return await this.userService.findOneUser(filters.id);
   }
 
   @Patch('/:id')
-  @UseGuards(RolesGuard)
-  @CheckResource('user')
   @HttpCode(HttpStatus.ACCEPTED)
   async updateUser(
     @Body() dto: UpdateUserDto,
@@ -61,8 +54,6 @@ export class UserController {
   }
 
   @Delete('/:id')
-  @UseGuards(RolesGuard)
-  @CheckResource('user')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteUser(@Param() filters: FindOneParams): Promise<void> {
     return await this.userService.deleteUser(filters.id);
