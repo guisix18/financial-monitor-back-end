@@ -32,8 +32,8 @@ export class CreateTransactionDto {
   @IsEnum(transaction_type)
   type?: transaction_type;
 
-  @IsNumber()
-  send_to_id: number;
+  @IsISO8601()
+  made_in: Date;
 }
 
 export class FilterTransaction {

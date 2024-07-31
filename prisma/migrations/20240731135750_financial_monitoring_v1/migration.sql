@@ -13,7 +13,7 @@ CREATE TABLE "User" (
     "created_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(6),
     "deleted_at" TIMESTAMP(6),
-    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "is_active" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -22,11 +22,11 @@ CREATE TABLE "User" (
 CREATE TABLE "Transaction" (
     "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
-    "description" TEXT NOT NULL,
+    "description" TEXT,
     "value" INTEGER NOT NULL,
     "category" TEXT NOT NULL,
-    "made_in" TIMESTAMP(3) NOT NULL,
     "created_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "made_in" TIMESTAMP(6) NOT NULL,
     "updated_at" TIMESTAMP(6),
     "deleted_at" TIMESTAMP(6),
     "type" "transaction_type" NOT NULL,
