@@ -8,6 +8,8 @@ import { TransactionModule } from './transaction/transaction.module';
 import { BillModule } from './bill/bill.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { ConfigModule } from '@nestjs/config';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { MailerModule } from '@nestjs-modules/mailer';
         },
       },
     }),
+    UploadModule,
+    ConfigModule.forRoot({ isGlobal: true }),
   ],
   controllers: [],
   providers: [
