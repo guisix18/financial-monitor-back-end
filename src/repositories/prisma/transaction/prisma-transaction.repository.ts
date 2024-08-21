@@ -108,7 +108,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
       where: {
         user_id: user.id,
         type: filters.type,
-        created_at: {
+        made_in: {
           gte: filters.start_date,
           lte: filters.end_date,
         },
@@ -119,7 +119,7 @@ export class PrismaTransactionRepository implements TransactionRepository {
         description: true,
         type: true,
         value: true,
-        created_at: true,
+        made_in: true,
       },
     });
 

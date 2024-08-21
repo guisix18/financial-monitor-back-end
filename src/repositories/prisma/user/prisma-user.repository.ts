@@ -82,7 +82,7 @@ export class PrismaUserRepository implements UserRepository {
             id: true,
             description: true,
             category: true,
-            created_at: true,
+            made_in: true,
             value: true,
             type: true,
           },
