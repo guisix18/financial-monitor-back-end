@@ -12,11 +12,20 @@ import {
   TRANSACTION_NOT_FOUND,
   TRANSACTION_NOT_FOUND_OR_DELETED,
 } from './utils/transactions.exceptions';
+import { ConfigService } from '@nestjs/config';
+import * as fs from 'fs';
+import { createObjectCsvWriter } from 'csv-writer';
+import * as archiver from 'archiver';
+import * as path from 'path';
+import { UploadService } from 'src/upload/upload.service';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class TransactionService {
   constructor(
     private readonly transactionRepository: PrismaTransactionRepository,
+    private readonly configService: ConfigService,
+    private readonly uploadService: UploadService,
   ) {}
 
   async createTransaction(
@@ -71,5 +80,59 @@ export class TransactionService {
     }
 
     return await this.transactionRepository.deleteTransaction(id, user);
+  }
+
+  async createReport(filters: FilterTransaction, user: UserFromJwt) {
+    console.log(filters);
+    const now = new Date().toISOString().replace(/:/g, '-');
+    const tempDir = this.configService.getOrThrow('TEMP_DIR');
+
+    fs.mkdirSync(tempDir, { recursive: true });
+
+    const filepath = `${tempDir}/transaction-report-${user.id}-${now}.csv`;
+
+    const csvWriter = createObjectCsvWriter({
+      path: filepath,
+      header: [
+        { id: 'id', title: 'ID' },
+        { id: 'category', title: 'Category' },
+        { id: 'description', title: 'Description' },
+        { id: 'type', title: 'Type' },
+        { id: 'value', title: 'Value' },
+        { id: 'made_in', title: 'Date' },
+      ],
+    });
+
+    const transactions = (
+      await this.transactionRepository.findManyTransactions(filters, user)
+    ).map((transaction) => ({
+      ...transaction,
+      made_in: new Date(transaction.made_in).toISOString().split('T')[0],
+    }));
+
+    if (transactions.length === 0) return;
+
+    await csvWriter.writeRecords(transactions);
+
+    const zipFilepath = `${tempDir}/transaction-report-${user.id}-${now}.zip`;
+    const output = fs.createWriteStream(zipFilepath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    archive.pipe(output);
+    archive.file(filepath, { name: path.basename(filepath) });
+
+    await archive.finalize();
+
+    try {
+      const fileBuffer = fs.readFileSync(filepath);
+      await this.uploadService.uploadReport(filepath, fileBuffer);
+    } catch (err) {
+      console.error('Error uploading report:', err);
+    } finally {
+      fs.unlinkSync(filepath);
+      fs.unlinkSync(zipFilepath);
+    }
+
+    return;
   }
 }

@@ -57,7 +57,7 @@ export class TransactionDto {
   description: string;
   value: number;
   category: string;
-  created_at: Date;
+  made_in: Date;
   type: transaction_type;
 }
 
