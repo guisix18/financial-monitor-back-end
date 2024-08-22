@@ -43,6 +43,15 @@ export class TransactionController {
     return await this.transactionService.findManyTransactions(filters, user);
   }
 
+  @Post('/report')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async createReport(
+    @Body() dto: FilterTransaction,
+    @CurrentUser() user: UserFromJwt,
+  ): Promise<void> {
+    return await this.transactionService.createReport(dto, user);
+  }
+
   @Patch('/:id')
   @HttpCode(HttpStatus.ACCEPTED)
   async updateTransaction(
