@@ -28,7 +28,11 @@ export class UserService {
     return fullUrl;
   }
 
-  private sendEmailValidationLink(email: string, id: number, request: Request) {
+  private sendEmailValidationLink(
+    email: string,
+    code: string,
+    request: Request,
+  ) {
     const url = this.urlGen(request);
 
     return this.mailerService.sendMail({
@@ -39,7 +43,7 @@ export class UserService {
       <div>
       <h1>You have successfully created an account</h1>
       <p>To access our platform and enjoy all the features, you have to validate your account first in the link: ${
-        url + '/validate-account/' + id
+        url + '/validate-account/' + code
       }</p>
       </div>`,
     });
@@ -47,7 +51,7 @@ export class UserService {
 
   //Esse método também não é a melhor coisa do mundo.
   //Eu não gostaria de implementar filas por agora, mas acho que é o melhor a se fazer pro futuro.
-  //Pois assim eu chamo o método de envio de email e ele nem sei se vai dar errado.
+  //Pois assim eu chamo o método de envio de email e ele(atualmente) nem tem como saber se vai dar errado.
   //Ao menos, o pior(eu acho) dos casos, o email não vai chegar...
   //A parte boa é que eu garanto o rápido retorno sem esperar a execução do envio do email.
   async createUser(
@@ -56,8 +60,19 @@ export class UserService {
   ): Promise<RecordWithId> {
     const user = await this.userRepository.findUserByEmail(dto.email);
 
+    //Preciso melhorar essa lógica aqui.
+    //Ainda não finalizado.
     if (user && !user.is_active) {
-      this.sendEmailValidationLink(dto.email, user.id, request);
+      const now = new Date();
+      const codeVerification = await this.userRepository.findCodeVerification(
+        user.id,
+      );
+
+      const expireDate = new Date(codeVerification.expire_date);
+
+      if (now < expireDate) {
+        this.sendEmailValidationLink(dto.email, codeVerification.code, request);
+      }
 
       return {
         id: user.id,
@@ -70,13 +85,19 @@ export class UserService {
 
     const createdUser = await this.userRepository.createUser(dto);
 
-    this.sendEmailValidationLink(dto.email, createdUser.id, request);
+    const codeVerification = await this.userRepository.findCodeVerification(
+      createdUser.id,
+    );
+
+    this.sendEmailValidationLink(dto.email, codeVerification.code, request);
 
     return {
       id: createdUser.id,
     };
   }
 
+  //Esse método vai se extender.
+  //Continuar isso aqui, não esquecer
   async validateAccount(id: number): Promise<void> {
     const user = await this.userRepository.findUserComplete(id);
 
