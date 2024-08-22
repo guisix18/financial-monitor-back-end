@@ -7,15 +7,13 @@ CREATE TABLE "CodeVerification" (
     "created_at" TIMESTAMP(6) NOT NULL,
     "used_at" TIMESTAMP(6),
     "expire_date" TIMESTAMP(6) NOT NULL,
+    "expired" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "CodeVerification_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "CodeVerification_user_id_key" ON "CodeVerification"("user_id");
-
--- CreateIndex
 CREATE UNIQUE INDEX "CodeVerification_code_key" ON "CodeVerification"("code");
 
 -- AddForeignKey
-ALTER TABLE "CodeVerification" ADD CONSTRAINT "CodeVerification_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "CodeVerification" ADD CONSTRAINT "CodeVerification_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
