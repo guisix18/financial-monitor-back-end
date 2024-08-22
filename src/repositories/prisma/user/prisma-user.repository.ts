@@ -6,21 +6,42 @@ import {
   CreateUserDto,
   UpdateUserDto,
 } from '../../../user/dto/user.dto';
-import { Prisma, User } from '@prisma/client';
+import { CodeVerification, Prisma, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class PrismaUserRepository implements UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async createUser(dto: CreateUserDto): Promise<User> {
-    const user = await this.prisma.user.create({
-      data: {
-        name: dto.name,
-        email: dto.email,
-        password: bcrypt.hashSync(dto.password, 8),
+    const now = new Date();
+
+    const user = await this.prisma.$transaction(
+      async (prismaTx: Prisma.TransactionClient) => {
+        const user = await prismaTx.user.create({
+          data: {
+            name: dto.name,
+            email: dto.email,
+            password: bcrypt.hashSync(dto.password, 8),
+            created_at: now,
+          },
+        });
+
+        //test.setHours(test.getHours() + 1)
+
+        await prismaTx.codeVerification.create({
+          data: {
+            code: randomUUID(),
+            created_at: now,
+            expire_date: new Date(now.setHours(now.getHours() + 1)),
+            user_id: user.id,
+          },
+        });
+
+        return user;
       },
-    });
+    );
 
     return user;
   }
@@ -130,5 +151,31 @@ export class PrismaUserRepository implements UserRepository {
     });
 
     return user;
+  }
+
+  async findCodeVerification(user_id: number): Promise<CodeVerification> {
+    const codeVerification = await this.prisma.codeVerification.findUnique({
+      where: {
+        user_id,
+      },
+    });
+
+    return codeVerification;
+  }
+
+  async createCodeVerification(
+    user_id: number,
+    now: Date,
+  ): Promise<CodeVerification> {
+    const codeVerification = await this.prisma.codeVerification.create({
+      data: {
+        code: randomUUID(),
+        created_at: now,
+        expire_date: new Date(now.setHours(now.getHours() + 1)),
+        user_id,
+      },
+    });
+
+    return codeVerification;
   }
 }
