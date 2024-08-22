@@ -25,6 +25,7 @@ model User {
   transaction        Transaction[]
   bill               Bill[]
   transactionHistory TransactionHistory[]
+  codeVerification   CodeVerification?
 }
 
 model Transaction {
@@ -67,6 +68,17 @@ model TransactionHistory {
   created_by       Int
   updated_at       DateTime?        @db.Timestamp(6)
   deleted_at       DateTime?        @db.Timestamp(6)
+}
+
+model CodeVerification {
+  id           Int       @id @default(autoincrement())
+  user_id      Int       @unique
+  created_for  User      @relation(fields: [user_id], references: [id])
+  already_used Boolean   @default(false)
+  code         String    @unique
+  created_at   DateTime  @db.Timestamp(6)
+  used_at      DateTime? @db.Timestamp(6)
+  expire_date  DateTime  @db.Timestamp(6)
 }
 
 enum transaction_type {
