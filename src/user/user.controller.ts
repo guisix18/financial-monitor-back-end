@@ -15,7 +15,6 @@ import { CreateUserDto, UpdateUserDto, UserInfos } from './dto/user.dto';
 import { RecordWithId } from '../../src/common/record-with-id.dto';
 import { FindOneParams } from '../../src/common/find-one-params.dto';
 import { IsPublic } from '../../src/auth/decorators/is-public.decorator';
-import { Request } from 'express';
 
 @Controller('user')
 export class UserController {
@@ -24,18 +23,15 @@ export class UserController {
   @IsPublic()
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createUser(
-    @Body() dto: CreateUserDto,
-    @Req() request: Request,
-  ): Promise<RecordWithId> {
-    return await this.userService.createUser(dto, request);
+  async createUser(@Body() dto: CreateUserDto): Promise<RecordWithId> {
+    return await this.userService.createUser(dto);
   }
 
   @IsPublic()
-  @Get('/validate-account/:id')
+  @Get('/validate-account/:code')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async validateAccount(@Param() filters: FindOneParams): Promise<void> {
-    return await this.userService.validateAccount(filters.id);
+  async validateAccount(@Param('code') code: string): Promise<void> {
+    return await this.userService.validateAccount(code);
   }
 
   @Get('/:id')
