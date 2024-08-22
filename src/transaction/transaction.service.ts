@@ -125,6 +125,8 @@ export class TransactionService {
 
     try {
       const fileBuffer = fs.readFileSync(filepath);
+      //Tenho que melhorar isso aqui, ainda não faço ideia do CACETE que funciona enviando o CSV direto
+      //Mas mandando o arquivo zip(o que faz sentido, compacta e mantém o arquivo mais leve) não funciona. Essa bosta.
       await this.uploadService.uploadReport(filepath, fileBuffer);
     } catch (err) {
       console.error('Error uploading report:', err);
