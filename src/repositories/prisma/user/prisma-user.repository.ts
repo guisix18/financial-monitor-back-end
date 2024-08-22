@@ -10,6 +10,10 @@ import { CodeVerification, Prisma, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 
+export type UserWithCodeVerification = User & {
+  codeVerification: CodeVerification[];
+};
+
 @Injectable()
 export class PrismaUserRepository implements UserRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -28,13 +32,14 @@ export class PrismaUserRepository implements UserRepository {
           },
         });
 
-        //test.setHours(test.getHours() + 1)
+        const expire_date = new Date(now.getTime());
+        expire_date.setHours(expire_date.getHours() + 1);
 
         await prismaTx.codeVerification.create({
           data: {
             code: randomUUID(),
             created_at: now,
-            expire_date: new Date(now.setHours(now.getHours() + 1)),
+            expire_date,
             user_id: user.id,
           },
         });
@@ -46,29 +51,65 @@ export class PrismaUserRepository implements UserRepository {
     return user;
   }
 
-  async validateAccount(user: User): Promise<void> {
+  async validateAccount(
+    user: UserWithCodeVerification,
+  ): Promise<CodeVerification | null> {
     if (user.is_active) {
       throw new BadRequestException('User already validated');
     }
 
+    const { codeVerification } = user;
     const now = new Date();
 
-    await this.prisma.$transaction(
+    const validCode = codeVerification.find(
+      (code) => !code.already_used && !code.expired && now <= code.expire_date,
+    );
+
+    if (!validCode) {
+      return await this.prisma.$transaction(
+        async (prismaTx: Prisma.TransactionClient) => {
+          await prismaTx.codeVerification.updateMany({
+            where: {
+              user_id: user.id,
+            },
+            data: {
+              expired: true,
+              expire_date: now,
+            },
+          });
+
+          return this.createCodeVerification(user.id, now, prismaTx);
+        },
+      );
+    }
+
+    return await this.prisma.$transaction(
       async (prismaTx: Prisma.TransactionClient) => {
+        await prismaTx.codeVerification.update({
+          where: {
+            id: validCode.id,
+            code: validCode.code,
+          },
+          data: {
+            already_used: true,
+            used_at: now,
+          },
+        });
+
         await prismaTx.user.update({
           where: {
             id: user.id,
-            is_active: false,
           },
           data: {
             is_active: true,
             updated_at: now,
           },
         });
+
+        //Se caiu aqui, user tá validado não tem o que retornar.
+        return null;
       },
     );
-
-    return;
   }
 
   async findUserByEmail(email: string): Promise<User> {
@@ -143,10 +184,17 @@ export class PrismaUserRepository implements UserRepository {
     return;
   }
 
-  async findUserComplete(id: number): Promise<User> {
-    const user = await this.prisma.user.findUnique({
+  async findUserByCode(code: string): Promise<UserWithCodeVerification> {
+    const user = await this.prisma.user.findFirst({
       where: {
-        id,
+        codeVerification: {
+          some: {
+            code,
+          },
+        },
+      },
+      include: {
+        codeVerification: true,
       },
     });
 
@@ -154,9 +202,11 @@ export class PrismaUserRepository implements UserRepository {
   }
 
   async findCodeVerification(user_id: number): Promise<CodeVerification> {
-    const codeVerification = await this.prisma.codeVerification.findUnique({
+    const codeVerification = await this.prisma.codeVerification.findFirst({
       where: {
         user_id,
+        already_used: false,
+        expired: false,
       },
     });
 
@@ -166,8 +216,9 @@ export class PrismaUserRepository implements UserRepository {
   async createCodeVerification(
     user_id: number,
     now: Date,
+    prismaTx: Prisma.TransactionClient,
   ): Promise<CodeVerification> {
-    const codeVerification = await this.prisma.codeVerification.create({
+    const codeVerification = await prismaTx.codeVerification.create({
       data: {
         code: randomUUID(),
         created_at: now,
@@ -177,5 +228,51 @@ export class PrismaUserRepository implements UserRepository {
     });
 
     return codeVerification;
+  }
+
+  async invalidateCodeVerification(
+    user_id: number,
+    code_id: number,
+    prismaTx: Prisma.TransactionClient,
+  ): Promise<void> {
+    await prismaTx.codeVerification.update({
+      where: {
+        id: code_id,
+        user_id,
+      },
+      data: {
+        expired: true,
+        expire_date: new Date(),
+      },
+    });
+
+    return;
+  }
+
+  async handleCodeVerification(
+    user: User,
+    codeVerification: CodeVerification,
+    now: Date,
+  ): Promise<CodeVerification> {
+    const code = await this.prisma.$transaction(
+      async (prismaTx: Prisma.TransactionClient) => {
+        await this.invalidateCodeVerification(
+          user.id,
+          codeVerification.id,
+          prismaTx,
+        );
+
+        // Gerar um novo código de verificação
+        const newCodeVerification = await this.createCodeVerification(
+          user.id,
+          now,
+          prismaTx,
+        );
+
+        return newCodeVerification;
+      },
+    );
+
+    return code;
   }
 }
