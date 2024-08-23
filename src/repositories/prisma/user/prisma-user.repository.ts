@@ -207,6 +207,7 @@ export class PrismaUserRepository implements UserRepository {
         user_id,
         already_used: false,
         expired: false,
+        used_at: null,
       },
     });
 
