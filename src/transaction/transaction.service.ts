@@ -89,7 +89,9 @@ export class TransactionService {
 
     fs.mkdirSync(tempDir, { recursive: true });
 
-    const filepath = `${tempDir}/transaction-report-${user.id}-${now}.csv`;
+    const filepath = `${tempDir}/transaction-report-${
+      user.id
+    }-${randomUUID()}-${now}.csv`;
 
     const csvWriter = createObjectCsvWriter({
       path: filepath,
