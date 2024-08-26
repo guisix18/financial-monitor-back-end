@@ -113,11 +113,11 @@ export class BillService {
             return;
 
           const billsOfTommorow = billsDueTomorrow.map((bill) =>
-            this.handleTomorrowBills(bill, now),
+            this.handleTomorrowBills(bill, now, prismaTx),
           );
 
           const billsOfToday = billsDueToday.map((bill) =>
-            this.handleTodayBills(bill, now),
+            this.handleTodayBills(bill, now, prismaTx),
           );
 
           await Promise.all([billsOfTommorow, billsOfToday]);
@@ -133,50 +133,50 @@ export class BillService {
     );
   }
 
-  private async handleTomorrowBills(bill: Bill, now: Dayjs) {
-    await this.prisma.$transaction(
-      async (prismaTx: Prisma.TransactionClient) => {
-        if (!bill.already_notify_1_day) {
-          const user = await this.userService.findOneUser(bill.user_id);
+  private async handleTomorrowBills(
+    bill: Bill,
+    now: Dayjs,
+    prismaTx: Prisma.TransactionClient,
+  ) {
+    if (!bill.already_notify_1_day) {
+      const user = await this.userService.findOneUser(bill.user_id);
 
-          await Promise.all([
-            this.billRepository.updateBillNotify({
-              id: bill.id,
-              type: '1-day',
-              now,
-              prismaTx,
-            }),
-            this.sendMail(user.email, bill),
-          ]);
-        }
-      },
-    );
+      await Promise.all([
+        this.billRepository.updateBillNotify({
+          id: bill.id,
+          type: '1-day',
+          now,
+          prismaTx,
+        }),
+        this.sendMail(user.email, bill),
+      ]);
+    }
   }
 
-  private async handleTodayBills(bill: Bill, now: Dayjs) {
-    await this.prisma.$transaction(
-      async (prismaTx: Prisma.TransactionClient) => {
-        if (!bill.already_notify_due_date) {
-          const user = await this.userService.findOneUser(bill.user_id);
+  private async handleTodayBills(
+    bill: Bill,
+    now: Dayjs,
+    prismaTx: Prisma.TransactionClient,
+  ) {
+    if (!bill.already_notify_due_date) {
+      const user = await this.userService.findOneUser(bill.user_id);
 
-          await Promise.all([
-            this.billRepository.updateBillStatus({
-              id: bill.id,
-              status: 'overdue',
-              now,
-              prismaTx,
-            }),
-            this.billRepository.updateBillNotify({
-              id: bill.id,
-              type: 'due_date',
-              now,
-              prismaTx,
-            }),
-            this.sendMail(user.email, bill),
-          ]);
-        }
-      },
-    );
+      await Promise.all([
+        this.billRepository.updateBillStatus({
+          id: bill.id,
+          status: 'overdue',
+          now,
+          prismaTx,
+        }),
+        this.billRepository.updateBillNotify({
+          id: bill.id,
+          type: 'due_date',
+          now,
+          prismaTx,
+        }),
+        this.sendMail(user.email, bill),
+      ]);
+    }
   }
 
   private async sendMail(email: string, bill: Bill) {
