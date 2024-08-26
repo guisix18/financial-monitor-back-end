@@ -78,6 +78,7 @@ export class PrismaBillRepository implements BillRepository {
         },
         status: 'pending',
         already_notify_1_day: false,
+        deleted_at: null,
       },
     });
 
@@ -94,6 +95,7 @@ export class PrismaBillRepository implements BillRepository {
         },
         status: 'pending',
         already_notify_due_date: false,
+        deleted_at: null,
       },
     });
 
@@ -177,6 +179,7 @@ export class PrismaBillRepository implements BillRepository {
 
     if (!id) throw new BadRequestException('Bill ID is required');
 
+    //Esse mapping é uma forma de garantir que o tipo de notificação é válido e talvez tenha outro tipo de notificação no futuro
     const notifyType: NotifyTypeMapping = {
       '1-day': 'already_notify_1_day',
       due_date: 'already_notify_due_date',
@@ -188,6 +191,7 @@ export class PrismaBillRepository implements BillRepository {
       await prismaTx.bill.update({
         where: {
           id,
+          deleted_at: null,
         },
         data: {
           [notifyField]: true,
