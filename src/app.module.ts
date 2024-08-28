@@ -10,6 +10,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule } from '@nestjs/config';
 import { UploadModule } from './upload/upload.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { UploadModule } from './upload/upload.module';
     }),
     UploadModule,
     ConfigModule.forRoot({ isGlobal: true }),
+    DashboardModule,
   ],
   controllers: [],
   providers: [
