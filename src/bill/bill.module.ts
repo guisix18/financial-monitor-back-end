@@ -17,5 +17,6 @@ import { UserModule } from 'src/user/user.module';
       useClass: PrismaBillRepository,
     },
   ],
+  exports: [BillService],
 })
 export class BillModule {}
