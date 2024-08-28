@@ -9,6 +9,7 @@ import {
   UpdateBillNotifyParams,
   UpdateBillStatus,
 } from 'src/bill/dto/bill.dto';
+import { FilterDataCountPanel } from 'src/dashboard/dto/dashboard.dto';
 
 export abstract class BillRepository {
   abstract createBill(dto: CreateBillDto, user: UserFromJwt): Promise<Bill>;
@@ -34,4 +35,19 @@ export abstract class BillRepository {
   abstract updateBillStatus(params: UpdateBillStatus): Promise<void>;
 
   abstract updateBillNotify(params: UpdateBillNotifyParams): Promise<void>;
+
+  abstract countBills(
+    filters: FilterDataCountPanel,
+    user: UserFromJwt,
+  ): Promise<number>;
+
+  abstract countBillsAlreadyPaid(
+    filters: FilterDataCountPanel,
+    user: UserFromJwt,
+  ): Promise<number>;
+
+  abstract countBillsToPay(
+    filters: FilterDataCountPanel,
+    user: UserFromJwt,
+  ): Promise<number>;
 }
