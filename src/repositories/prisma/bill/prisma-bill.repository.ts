@@ -12,6 +12,7 @@ import {
 } from 'src/bill/dto/bill.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { BillRepository } from 'src/contracts/bill/bill.repository';
+import { FilterDataCountPanel } from 'src/dashboard/dto/dashboard.dto';
 
 type NotifyTypeMapping = {
   '1-day': 'already_notify_1_day';
@@ -201,5 +202,58 @@ export class PrismaBillRepository implements BillRepository {
     }
 
     throw new Error('Notify type not found');
+  }
+
+  async countBills(
+    filters: FilterDataCountPanel,
+    user: UserFromJwt,
+  ): Promise<number> {
+    const count = await this.prisma.bill.count({
+      where: {
+        user_id: user.id,
+        created_at: {
+          gte: filters.start_date,
+          lte: filters.end_date,
+        },
+      },
+    });
+
+    return count;
+  }
+
+  async countBillsAlreadyPaid(
+    filters: FilterDataCountPanel,
+    user: UserFromJwt,
+  ): Promise<number> {
+    const count = await this.prisma.bill.count({
+      where: {
+        user_id: user.id,
+        created_at: {
+          gte: filters.start_date,
+          lte: filters.end_date,
+        },
+        status: 'paid',
+      },
+    });
+
+    return count;
+  }
+
+  async countBillsToPay(
+    filters: FilterDataCountPanel,
+    user: UserFromJwt,
+  ): Promise<number> {
+    const count = await this.prisma.bill.count({
+      where: {
+        user_id: user.id,
+        created_at: {
+          gte: filters.start_date,
+          lte: filters.end_date,
+        },
+        status: 'pending',
+      },
+    });
+
+    return count;
   }
 }
