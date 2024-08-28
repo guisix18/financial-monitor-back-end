@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaTransactionRepository } from 'src/repositories/prisma/transaction/prisma-transaction.repository';
 import {
   CreateTransactionDto,
@@ -19,6 +23,7 @@ import * as archiver from 'archiver';
 import * as path from 'path';
 import { UploadService } from 'src/upload/upload.service';
 import { randomUUID } from 'crypto';
+import { FilterDataCountPanel } from 'src/dashboard/dto/dashboard.dto';
 
 @Injectable()
 export class TransactionService {
@@ -138,5 +143,9 @@ export class TransactionService {
     }
 
     return;
+  }
+
+  async countTransactions(filters: FilterDataCountPanel, user: UserFromJwt) {
+    return this.transactionRepository.countTransactions(filters, user);
   }
 }
