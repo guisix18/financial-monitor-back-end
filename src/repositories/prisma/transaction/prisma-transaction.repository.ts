@@ -13,6 +13,7 @@ import {
 } from 'src/transaction/dto/transaction.dto';
 import { TRANSACTION_HISTORY_NOT_FOUND } from 'src/transaction/utils/transactions.exceptions';
 import { transaction_locker } from 'src/common/advisory-lock';
+import { FilterDataCountPanel } from 'src/dashboard/dto/dashboard.dto';
 
 @Injectable()
 export class PrismaTransactionRepository implements TransactionRepository {
@@ -228,5 +229,22 @@ export class PrismaTransactionRepository implements TransactionRepository {
     });
 
     return;
+  }
+
+  async countTransactions(
+    filters: FilterDataCountPanel,
+    user: UserFromJwt,
+  ): Promise<number> {
+    const count = await this.prisma.transaction.count({
+      where: {
+        user_id: user.id,
+        made_in: {
+          gte: filters.start_date,
+          lte: filters.end_date,
+        },
+      },
+    });
+
+    return count;
   }
 }

@@ -43,11 +43,11 @@ export class FilterTransaction {
 
   @IsOptional()
   @IsISO8601()
-  start_date?: Date;
+  start_date?: string;
 
   @IsOptional()
   @IsISO8601()
-  end_date?: Date;
+  end_date?: string;
 }
 
 export class UpdateTransactionDto extends PartialType(CreateTransactionDto) {}

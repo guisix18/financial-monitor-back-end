@@ -17,5 +17,6 @@ import { UploadModule } from 'src/upload/upload.module';
       useClass: PrismaTransactionRepository,
     },
   ],
+  exports: [TransactionService],
 })
 export class TransactionModule {}

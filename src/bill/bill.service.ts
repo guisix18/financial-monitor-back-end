@@ -21,6 +21,7 @@ import { Bill, Prisma } from '@prisma/client';
 import { Dayjs } from 'dayjs';
 const dayjs = require('dayjs'); //BRUH, por que não funciona sem importar assim?
 import { bill_locker } from 'src/common/advisory-lock';
+import { FilterDataCountPanel } from 'src/dashboard/dto/dashboard.dto';
 
 @Injectable()
 export class BillService {
@@ -188,5 +189,26 @@ export class BillService {
         bill.due_date,
       ).format('DD/MM/YYYY')}).</h1>`,
     });
+  }
+
+  async countBills(
+    filters: FilterDataCountPanel,
+    user: UserFromJwt,
+  ): Promise<number> {
+    return await this.billRepository.countBills(filters, user);
+  }
+
+  async countBillsAlreadyPaid(
+    filters: FilterDataCountPanel,
+    user: UserFromJwt,
+  ): Promise<number> {
+    return await this.billRepository.countBillsAlreadyPaid(filters, user);
+  }
+
+  async countBillsToPay(
+    filters: FilterDataCountPanel,
+    user: UserFromJwt,
+  ): Promise<number> {
+    return await this.billRepository.countBillsToPay(filters, user);
   }
 }
