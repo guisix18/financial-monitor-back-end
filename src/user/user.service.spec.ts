@@ -101,23 +101,10 @@ describe('UserService', () => {
         password: '12345678',
       };
 
-      const mockedResultError = {
-        id: 1,
-        name: 'John Doe',
-        email: 'johndoe@mail.com',
-        password: '12345678',
-        created_at: new Date(),
-        updated_at: null,
-        deleted_at: null,
-        is_active: true,
-      };
+      (userRepository.findUserByEmail as jest.Mock).mockResolvedValue(
+        mockedResult,
+      );
 
-      // Mock da função findUserByEmail para retornar um usuário existente
-      jest
-        .spyOn(userRepository, 'findUserByEmail')
-        .mockResolvedValue(mockedResultError);
-
-      // Espera que o método crie um usuário e lance uma exceção
       await expect(userService.createUser(dto)).rejects.toThrow(
         new BadRequestException(
           'User already exists but still inactive. Please check your email, we sent a new validation link!',
