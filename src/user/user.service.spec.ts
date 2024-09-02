@@ -1,127 +1,138 @@
-// import { UserRepository } from '../contracts/user/user.repository';
-// import { UserController } from './user.controller';
-// import { UserService } from './user.service';
-// import { PrismaUserRepository } from '../../src/repositories/prisma/user/prisma-user.repository';
-// import { Test } from '@nestjs/testing';
-// import { PrismaModule } from '../../src/prisma/prisma.module';
-// import { BadRequestException, NotFoundException } from '@nestjs/common';
-// import { request } from 'express';
+import { UserRepository } from '../contracts/user/user.repository';
+import { UserController } from './user.controller';
+import { UserService } from './user.service';
+import { PrismaUserRepository } from '../../src/repositories/prisma/user/prisma-user.repository';
+import { Test } from '@nestjs/testing';
+import { PrismaModule } from '../../src/prisma/prisma.module';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { MailerModule, MailerService } from '@nestjs-modules/mailer';
+import { send } from 'process';
 
-// const mockedResult = {
-//   id: 2,
-//   name: 'John Doe',
-//   email: 'johndoe@mail.com',
-//   password: '12345678',
-//   created_at: new Date(),
-//   updated_at: null,
-//   deleted_at: null,
-//   is_active: true,
-// };
+const mockedResult = {
+  id: 2,
+  name: 'John Doe',
+  email: 'johndoe@mail.com',
+  password: '12345678',
+  created_at: new Date(),
+  updated_at: null,
+  deleted_at: null,
+  is_active: true,
+};
 
-// const mockedResultFindOne = {
-//   name: 'John Doe',
-//   email: 'johndoe@mail.com',
-//   created_at: new Date(),
-//   updated_at: null,
-//   deleted_at: null,
-//   is_active: true,
-//   bill: [],
-//   transaction: [],
-// };
+const mockedResultFindOne = {
+  name: 'John Doe',
+  email: 'johndoe@mail.com',
+  created_at: new Date(),
+  updated_at: null,
+  deleted_at: null,
+  is_active: true,
+  bill: [],
+  transaction: [],
+};
 
-// const mockedResultUpdate = {
-//   id: 2,
-//   name: 'John Doe updated',
-//   email: 'johndoeupdate@mail.com',
-//   password: '12345678910',
-//   created_at: mockedResult.created_at,
-//   updated_at: new Date(),
-//   deleted_at: null,
-//   is_active: true,
-// };
+const mockedResultUpdate = {
+  id: 2,
+  name: 'John Doe updated',
+  email: 'johndoeupdate@mail.com',
+  password: '12345678910',
+  created_at: mockedResult.created_at,
+  updated_at: new Date(),
+  deleted_at: null,
+  is_active: true,
+};
 
-// describe('UserService', () => {
-//   let userService: UserService;
-//   let userRepository: jest.Mocked<PrismaUserRepository>;
+describe('UserService', () => {
+  let userService: UserService;
+  let userRepository: jest.Mocked<PrismaUserRepository>;
 
-//   beforeEach(async () => {
-//     userRepository = {
-//       findUserByEmail: jest.fn(),
-//       createUser: jest.fn(),
-//       findOneUser: jest.fn(),
-//       updateUser: jest.fn(),
-//       deleteUser: jest.fn(),
-//     } as any;
+  beforeEach(async () => {
+    userRepository = {
+      findUserByEmail: jest.fn(),
+      createUser: jest.fn(),
+      findOneUser: jest.fn(),
+      updateUser: jest.fn(),
+      deleteUser: jest.fn(),
+    } as any;
 
-//     const moduleRef = await Test.createTestingModule({
-//       imports: [PrismaModule],
-//       controllers: [UserController],
-//       providers: [
-//         UserService,
-//         PrismaUserRepository,
-//         {
-//           provide: UserRepository,
-//           useValue: userRepository,
-//         },
-//       ],
-//     }).compile();
+    const moduleRef = await Test.createTestingModule({
+      imports: [PrismaModule, ConfigModule.forRoot(), MailerModule],
+      controllers: [UserController],
+      providers: [
+        UserService,
+        PrismaUserRepository,
 
-//     userService = moduleRef.get<UserService>(UserService);
-//   });
+        {
+          provide: UserRepository,
+          useValue: userRepository,
+        },
+        {
+          provide: MailerService,
+          useValue: {
+            sendMail: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
 
-//   describe('createUser', () => {
-//     it('should create an user', async () => {
-//       const dto = {
-//         name: 'John Doe',
-//         email: 'johndoe@mail.com',
-//         password: '12345678',
-//       };
+    userService = moduleRef.get<UserService>(UserService);
+  });
 
-//       jest.spyOn(userRepository, 'findUserByEmail').mockResolvedValue(null);
-//       jest.spyOn(userService, 'createUser').mockResolvedValue({ id: 1 });
+  describe('User Service Unit Tests', () => {
+    it('should create an user', async () => {
+      const dto = {
+        name: 'John Doe',
+        email: 'johndoe@mail.com',
+        password: '12345678',
+      };
 
-//       const user = await userService.createUser(dto);
+      jest.spyOn(userRepository, 'findUserByEmail').mockResolvedValue(null);
+      jest.spyOn(userService, 'createUser').mockResolvedValue({ id: 1 });
 
-//       expect(user).toEqual({ id: user.id });
-//     });
+      const user = await userService.createUser(dto);
 
-//     it('should throw an error if the user already exists', async () => {
-//       const dto = {
-//         name: 'John Doe',
-//         email: 'johndoe@mail.com',
-//         password: '12345678',
-//       };
+      expect(user).toEqual({ id: user.id });
+    });
 
-//       jest
-//         .spyOn(userRepository, 'findUserByEmail')
-//         .mockResolvedValue(mockedResult);
+    it('should throw an error if the user already exists', async () => {
+      const dto = {
+        name: 'John Doe',
+        email: 'johndoe@mail.com',
+        password: '12345678',
+      };
 
-//       await expect(userService.createUser(dto, request)).rejects.toThrow(
-//         new BadRequestException('Already exists an user with this email'),
-//       );
-//     });
-//   });
+      jest
+        .spyOn(userRepository, 'findUserByEmail')
+        .mockResolvedValue(mockedResult);
 
-//   describe('findUserByEmail', () => {
-//     it('should find an user by email', async () => {
-//       const email = 'johndoe@mail.com';
+      await expect(userService.createUser(dto)).rejects.toThrow(
+        new BadRequestException(
+          'User already exists but still inactive. Please check your email, we sent a new validation link!',
+        ),
+      );
+    });
+  });
+  describe('findUserByEmail', () => {
+    it('should find an user by email', async () => {
+      const email = 'johndoe@mail.com';
 
-//       jest
-//         .spyOn(userRepository, 'findUserByEmail')
-//         .mockResolvedValue(mockedResult);
+      jest
+        .spyOn(userRepository, 'findUserByEmail')
+        .mockResolvedValue(mockedResult);
 
-//       jest
-//         .spyOn(userService, 'findUserByEmail')
-//         .mockResolvedValue(mockedResult);
+      jest
+        .spyOn(userService, 'findUserByEmail')
+        .mockResolvedValue(mockedResult);
 
-//       const findUser = await userService.findUserByEmail(email);
+      const findUser = await userService.findUserByEmail(email);
 
-//       console.log(findUser);
+      console.log(findUser);
 
-//       expect(findUser.email).toEqual(email);
-//       expect(findUser).toEqual(mockedResult);
-//     });
-//   });
+      expect(findUser.email).toEqual(email);
+      expect(findUser).toEqual(mockedResult);
+    });
+  });
+});
 
 //   describe('findOneUser', () => {
 //     it('should find an user by id', async () => {
