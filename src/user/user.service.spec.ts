@@ -4,11 +4,10 @@ import { UserService } from './user.service';
 import { PrismaUserRepository } from '../../src/repositories/prisma/user/prisma-user.repository';
 import { Test } from '@nestjs/testing';
 import { PrismaModule } from '../../src/prisma/prisma.module';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { MailerModule, MailerService } from '@nestjs-modules/mailer';
-import { send } from 'process';
-import { rejects } from 'assert';
+import { SendMailModule } from '../../src/mailer/send-mail.module';
+import { SendMailService } from '../../src/mailer/send.mail.service';
 
 const mockedResult = {
   id: 2,
@@ -57,20 +56,21 @@ describe('UserService', () => {
     } as any;
 
     const moduleRef = await Test.createTestingModule({
-      imports: [PrismaModule, ConfigModule.forRoot(), MailerModule],
+      imports: [PrismaModule, ConfigModule.forRoot(), SendMailModule],
       controllers: [UserController],
       providers: [
         UserService,
         PrismaUserRepository,
+        SendMailService,
 
         {
           provide: UserRepository,
           useValue: userRepository,
         },
         {
-          provide: MailerService,
+          provide: SendMailService,
           useValue: {
-            sendMail: jest.fn(),
+            sendEmailValidationLink: jest.fn(),
           },
         },
       ],
