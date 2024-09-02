@@ -106,6 +106,14 @@ describe('UserService', () => {
         mockedResult,
       );
 
+      jest
+        .spyOn(userService, 'createUser')
+        .mockRejectedValue(
+          new BadRequestException(
+            'User already exists but still inactive. Please check your email, we sent a new validation link!',
+          ),
+        );
+
       await expect(userService.createUser(dto)).rejects.toThrow(
         new BadRequestException(
           'User already exists but still inactive. Please check your email, we sent a new validation link!',
