@@ -39,4 +39,6 @@ jobs:
         run: npm run build:ts
 
       - name: Run tests
+        env:
+          DATABASE_URL: "postgresql://user:password@localhost:5432/test_db"
         run: npm test
