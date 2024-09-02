@@ -32,17 +32,7 @@ export class PrismaUserRepository implements UserRepository {
           },
         });
 
-        const expire_date = new Date(now.getTime());
-        expire_date.setHours(expire_date.getHours() + 1);
-
-        await prismaTx.codeVerification.create({
-          data: {
-            code: randomUUID(),
-            created_at: now,
-            expire_date,
-            user_id: user.id,
-          },
-        });
+        await this.createCodeVerification(user.id, now, prismaTx);
 
         return user;
       },
@@ -263,7 +253,6 @@ export class PrismaUserRepository implements UserRepository {
           prismaTx,
         );
 
-        // Gerar um novo código de verificação
         const newCodeVerification = await this.createCodeVerification(
           user.id,
           now,
