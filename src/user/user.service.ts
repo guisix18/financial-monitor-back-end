@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,32 +7,19 @@ import { PrismaUserRepository } from '../../src/repositories/prisma//user/prisma
 import { UserInfos, CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { RecordWithId } from '../../src/common/record-with-id.dto';
 import { User } from '@prisma/client';
-import { MailerService } from '@nestjs-modules/mailer';
-import { ConfigService } from '@nestjs/config';
+import { SendMailService } from '../mailer/send.mail.service';
 
 @Injectable()
 export class UserService {
-  private readonly baseUrl: string =
-    this.configService.get('BASE_URL') ?? 'http://localhost:3005';
-
   constructor(
     private readonly userRepository: PrismaUserRepository,
-    private readonly configService: ConfigService,
-    @Inject(MailerService) private readonly mailerService: MailerService,
+    private readonly mailerService: SendMailService,
   ) {}
 
   private sendEmailValidationLink(email: string, code: string) {
-    const validationUrl = `${this.baseUrl}/user/validate-account/${code}`;
-    return this.mailerService.sendMail({
-      to: email,
-      subject: 'Welcome to our platform',
-      text: 'You have successfully created an account',
-      html: `
-      <div>
-      <h1>You have successfully created an account</h1>
-      <p>To access our platform and enjoy all the features, you have to validate your account first using the following link: 
-      <a href="${validationUrl}">${validationUrl}</a></p>
-      </div>`,
+    return this.mailerService.sendEmailValidationLink({
+      email,
+      code,
     });
   }
 

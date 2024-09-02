@@ -199,9 +199,11 @@ export class PrismaBillRepository implements BillRepository {
           updated_at: now.toDate(),
         },
       });
+
+      return;
     }
 
-    throw new Error('Notify type not found');
+    console.log('Invalid notify type');
   }
 
   async countBills(
