@@ -7,10 +7,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { TransactionModule } from './transaction/transaction.module';
 import { BillModule } from './bill/bill.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { MailerModule } from '@nestjs-modules/mailer';
-import { ConfigModule } from '@nestjs/config';
 import { UploadModule } from './upload/upload.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { SendMailModule } from './mailer/send-mail.module';
 
 @Module({
   imports: [
@@ -20,18 +19,9 @@ import { DashboardModule } from './dashboard/dashboard.module';
     TransactionModule,
     BillModule,
     ScheduleModule.forRoot(),
-    MailerModule.forRoot({
-      transport: {
-        host: 'smtp.gmail.com',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-      },
-    }),
     UploadModule,
-    ConfigModule.forRoot({ isGlobal: true }),
     DashboardModule,
+    SendMailModule,
   ],
   controllers: [],
   providers: [
