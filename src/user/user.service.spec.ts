@@ -8,6 +8,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MailerModule, MailerService } from '@nestjs-modules/mailer';
 import { send } from 'process';
+import { rejects } from 'assert';
 
 const mockedResult = {
   id: 2,
@@ -17,7 +18,7 @@ const mockedResult = {
   created_at: new Date(),
   updated_at: null,
   deleted_at: null,
-  is_active: true,
+  is_active: false,
 };
 
 const mockedResultFindOne = {
