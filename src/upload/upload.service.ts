@@ -11,10 +11,10 @@ import { Readable } from 'stream';
 @Injectable()
 export class UploadService {
   private readonly s3Client = new S3Client({
-    region: this.configService.getOrThrow('AWS_S3_REGION'),
+    region: this.configService.get('AWS_S3_REGION'),
     credentials: {
-      accessKeyId: this.configService.getOrThrow('AWS_S3_ACCESS_KEY'),
-      secretAccessKey: this.configService.getOrThrow('AWS_S3_SECRET_KEY'),
+      accessKeyId: this.configService.get('AWS_S3_ACCESS_KEY'),
+      secretAccessKey: this.configService.get('AWS_S3_SECRET_KEY'),
     },
   });
 
@@ -23,7 +23,7 @@ export class UploadService {
   async uploadReport(filename: string, file: Buffer) {
     await this.s3Client.send(
       new PutObjectCommand({
-        Bucket: this.configService.getOrThrow('AWS_S3_BUCKET'),
+        Bucket: this.configService.get('AWS_S3_BUCKET'),
         Key: filename,
         Body: file,
         ContentType: 'application/zip',
@@ -34,7 +34,7 @@ export class UploadService {
 
   async getFile(filename: string): Promise<Buffer> {
     const command = new GetObjectCommand({
-      Bucket: this.configService.getOrThrow('AWS_S3_BUCKET'),
+      Bucket: this.configService.get('AWS_S3_BUCKET'),
       Key: filename,
     });
 
@@ -49,7 +49,7 @@ export class UploadService {
   }
 
   async deleteFile(filename: string): Promise<void> {
-    const bucket = this.configService.getOrThrow('AWS_S3_BUCKET');
+    const bucket = this.configService.get('AWS_S3_BUCKET');
     const command = new DeleteObjectCommand({
       Bucket: bucket,
       Key: filename,

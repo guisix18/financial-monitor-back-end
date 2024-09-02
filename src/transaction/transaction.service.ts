@@ -90,7 +90,7 @@ export class TransactionService {
   async createReport(filters: FilterTransaction, user: UserFromJwt) {
     console.log(filters);
     const now = new Date().toISOString().replace(/:/g, '-');
-    const tempDir = this.configService.getOrThrow('TEMP_DIR');
+    const tempDir = this.configService.get('TEMP_DIR') ?? '/tmp';
 
     fs.mkdirSync(tempDir, { recursive: true });
 
