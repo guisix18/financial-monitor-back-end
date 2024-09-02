@@ -37,6 +37,8 @@ jobs:
         run: npm install
 
       - name: Apply Migrations
+        env:
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/financialMonitoring?schema=public"
         run: npx prisma migrate deploy
 
       - name: Build project
