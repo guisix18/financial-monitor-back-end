@@ -5,9 +5,10 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { PrismaTransactionRepository } from 'src/repositories/prisma/transaction/prisma-transaction.repository';
 import { TransactionRepository } from 'src/contracts/transaction/transaction.repository';
 import { UploadModule } from 'src/upload/upload.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [PrismaModule, UploadModule],
+  imports: [PrismaModule, UploadModule, ConfigModule],
   controllers: [TransactionController],
   providers: [
     TransactionService,
