@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -14,7 +13,6 @@ import {
 import { UserFromJwt } from 'src/auth/models/UserFromJwt';
 import { RecordWithId } from 'src/common/record-with-id.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { MailerService } from '@nestjs-modules/mailer';
 import { UserService } from 'src/user/user.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Bill, Prisma } from '@prisma/client';
@@ -22,6 +20,7 @@ import { Dayjs } from 'dayjs';
 const dayjs = require('dayjs'); //BRUH, por que não funciona sem importar assim?
 import { bill_locker } from 'src/common/advisory-lock';
 import { FilterDataCountPanel } from 'src/dashboard/dto/dashboard.dto';
+import { SendMailService } from 'src/mailer/send.mail.service';
 
 @Injectable()
 export class BillService {
@@ -29,7 +28,7 @@ export class BillService {
     private readonly billRepository: PrismaBillRepository,
     private readonly userService: UserService,
     private readonly prisma: PrismaService,
-    @Inject(MailerService) private readonly mailer: MailerService,
+    private readonly mailerService: SendMailService,
   ) {}
 
   async createBill(
@@ -121,7 +120,7 @@ export class BillService {
             this.handleTodayBills(bill, now, prismaTx),
           );
 
-          await Promise.all([billsOfTommorow, billsOfToday]);
+          await Promise.all([...billsOfTommorow, ...billsOfToday]);
         } finally {
           await prismaTx.$queryRaw`SELECT pg_advisory_unlock(${bill_locker});`;
         }
@@ -149,7 +148,10 @@ export class BillService {
           now,
           prismaTx,
         }),
-        this.sendMail(user.email, bill),
+        this.mailerService.sendEmailBillDueTomorrow({
+          email: user.email,
+          bill,
+        }),
       ]);
     }
   }
@@ -175,20 +177,12 @@ export class BillService {
           now,
           prismaTx,
         }),
-        this.sendMail(user.email, bill),
+        this.mailerService.sendEmailBillDueToday({
+          email: user.email,
+          bill,
+        }),
       ]);
     }
-  }
-
-  private async sendMail(email: string, bill: Bill) {
-    return this.mailer.sendMail({
-      to: email,
-      from: 'guisix16@gmail.com',
-      subject: `Sua fatura está vencida!`,
-      html: `<h1>Sua conta "${bill.description}" vence hoje (${dayjs(
-        bill.due_date,
-      ).format('DD/MM/YYYY')}).</h1>`,
-    });
   }
 
   async countBills(
