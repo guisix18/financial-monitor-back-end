@@ -35,13 +35,6 @@ jobs:
       - name: Create Docker Database
         run: docker-compose up -d
 
-      - name: Wait for Database
-        run: |
-          until docker-compose exec db pg_isready -U postgres; do
-            echo "Waiting for postgres..."
-            sleep 1
-          done
-
       - name: Apply Migrations
         env:
           DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/financialMonitoring?schema=public"
