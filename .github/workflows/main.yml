@@ -26,6 +26,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Build Docker
+        run: docker-compose build
+
+      - name: Create Docker Database
+        run: docker-compose up- d
+
       - name: Build project
         run: npm run build:ts
 
