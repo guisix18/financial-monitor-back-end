@@ -57,10 +57,10 @@ jobs:
 
       - name: Apply Migrations
         env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/financialMonitoring?schema=public"
+          DATABASE_URL: ${{secrets.DATABASE_URL}}
         run: npx prisma migrate deploy
 
       - name: Run tests
         env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/financialMonitoring?schema=public"
+          DATABASE_URL: ${{secrets.DATABASE_URL}}
         run: npm test
