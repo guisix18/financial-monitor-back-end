@@ -9,8 +9,7 @@ const DataCountPanels = {
   bills_to_pay: 'bills_to_pay',
 };
 
-export type DataCountPanels =
-  (typeof DataCountPanels)[keyof typeof DataCountPanels];
+export type DataCountPanels = keyof typeof DataCountPanels;
 
 function isDataCountPanel(data: any): data is DataCountPanels {
   if (!data.value) return undefined;
@@ -25,7 +24,9 @@ function isDataCountPanel(data: any): data is DataCountPanels {
   return validateArray;
 }
 
-function ValidateDataCountPanel(value: any): DataCountPanels {
+function ValidateDataCountPanel(
+  value: any,
+): (typeof DataCountPanels)[keyof typeof DataCountPanels] {
   const parse = DataCountPanels[value as DataCountPanels];
   if (parse === undefined) {
     throw new BadRequestException(`Valor ${value} não é válido para o painel`);

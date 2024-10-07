@@ -24,7 +24,7 @@ export class DashboardService {
       throw new BadRequestException('Start date must be less than end date');
     }
 
-    const typesToPromises: DataCountPanels[] = filters.panel
+    const typesToPromises: (DataCountPanels | undefined)[] = filters.panel
       ? filters.panel
       : ['transactions', 'bills', 'bills_already_paid', 'bills_to_pay'];
 
@@ -38,6 +38,8 @@ export class DashboardService {
           return this.countBillsAlreadyPaid(filters, user);
         case 'bills_to_pay':
           return this.countBillsToPay(filters, user);
+        default:
+          dataCountType satisfies never;
       }
     });
 
